@@ -1,6 +1,6 @@
 // Service worker: приложение открывается и без интернета.
 // При изменении файлов увеличьте VERSION, чтобы телефоны получили обновление.
-const VERSION = "v3";
+const VERSION = "v4";
 const CACHE = "checklist-" + VERSION;
 const SHELL = [
   "./",
@@ -39,8 +39,10 @@ self.addEventListener("fetch", e => {
   }
 
   // Шрифты Google и свои файлы: из кэша, параллельно обновляем
+  // (запросы к Supabase не кэшируем — только статику)
   const isFont = url.hostname === "fonts.googleapis.com" || url.hostname === "fonts.gstatic.com";
-  if (url.origin === location.origin || isFont) {
+  const isLib = url.hostname === "cdn.jsdelivr.net";
+  if (url.origin === location.origin || isFont || isLib) {
     e.respondWith(
       caches.open(CACHE).then(async cache => {
         const cached = await cache.match(req);

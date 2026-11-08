@@ -316,6 +316,51 @@
   .btn:hover { background: var(--accent); }
   .hint { font-size: 13px; color: var(--muted); font-style: italic; margin-top: 12px; }
 
+  /* ---------- Синхронизация ---------- */
+  .head-btns { display: flex; gap: 8px; }
+  .icon-btn { position: relative; }
+  .icon-btn .dot {
+    position: absolute; top: 3px; right: 3px;
+    width: 8px; height: 8px; border-radius: 50%;
+    background: transparent;
+    transition: background .3s;
+  }
+  .icon-btn.ok .dot { background: #6f9a6a; }
+  .icon-btn.pending .dot { background: #d9a441; animation: pulse 1s ease-in-out infinite; }
+  .icon-btn.error .dot { background: #d8484d; }
+  .icon-btn.needkey .dot { background: #d9a441; }
+  @keyframes pulse { 50% { opacity: .3; } }
+
+  .sync-view { display: none; }
+  .app.syncing .sync-view { display: block; }
+  .app.syncing .main-view { display: none; }
+  .sync-view h2 {
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-weight: 500; font-size: 24px;
+    margin: 0 0 14px;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 10px;
+  }
+  .sync-view p { margin: 0 0 12px; line-height: 1.45; }
+  .sync-view form { display: flex; flex-direction: column; gap: 10px; margin-bottom: 4px; }
+  input.field {
+    font: inherit;
+    padding: 11px 14px;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: rgba(0,0,0,.35);
+    color: var(--ink);
+    outline: none;
+    width: 100%;
+  }
+  input.field:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
+  input.field.code { letter-spacing: .4em; text-align: center; font-size: 22px; }
+  .sync-error { color: #e0676b; font-size: 15px; min-height: 1em; }
+  .sync-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+  .who { font-size: 15px; color: var(--muted); word-break: break-all; }
+  .who b { color: var(--ink); font-weight: 500; }
+  .btn:disabled { opacity: .5; cursor: wait; }
+
   @media (max-width: 480px) {
     body { padding: 24px 16px; }
     .app { padding: 26px 18px 18px; }
@@ -486,7 +531,10 @@
       <h1>Мои <em>списки</em></h1>
       <div class="date" id="date"></div>
     </div>
-    <button class="icon-btn" id="editBtn" title="Редактировать категории" aria-label="Редактировать категории">✎</button>
+    <div class="head-btns">
+      <button class="icon-btn" id="syncBtn" title="Синхронизация" aria-label="Синхронизация">☁<span class="dot"></span></button>
+      <button class="icon-btn" id="editBtn" title="Редактировать категории" aria-label="Редактировать категории">✎</button>
+    </div>
   </header>
 
   <section class="main-view">
@@ -518,6 +566,15 @@
       <button class="btn" id="doneEdit">Готово</button>
     </div>
     <div class="hint">Кружок меняет цвет. Тяните за ⋮⋮, чтобы поменять порядок, — или перетаскивайте прямо вкладки.</div>
+  </section>
+
+  <section class="sync-view">
+    <h2>Синхронизация</h2>
+    <div id="syncBody"></div>
+    <div class="sync-row">
+      <span></span>
+      <button class="btn" id="closeSync">Готово</button>
+    </div>
   </section>
 </main>
 
@@ -562,7 +619,38 @@ function load() {
 
 let data = load();
 let editing = false;
-const save = () => store(KEY, JSON.stringify(data));
+
+/* Сохранение. Сравниваем с прошлым снимком, чтобы знать, что поменялось:
+   изменённым пунктам/категориям ставим метку времени, удалённым — «надгробие».
+   Это нужно, чтобы правки с разных устройств аккуратно сливались. */
+function takeSnap(d) {
+  const m = new Map();
+  d.lists.forEach(l => {
+    m.set(l.id, JSON.stringify([l.name, l.color]));
+    l.items.forEach(i => m.set(i.id, JSON.stringify([i.text, !!i.done])));
+  });
+  m.set("__order", d.lists.map(l => l.id + ":" + l.items.map(i => i.id).join(",")).join("|"));
+  return m;
+}
+let snap = takeSnap(data);
+
+function save() {
+  const next = takeSnap(data), now = Date.now();
+  let changed = snap.get("__order") !== next.get("__order");
+  data.deleted = data.deleted || {};
+  data.lists.forEach(l => {
+    if (snap.get(l.id) !== next.get(l.id)) { l.updatedAt = now; changed = true; }
+    l.items.forEach(i => { if (snap.get(i.id) !== next.get(i.id)) { i.updatedAt = now; changed = true; } });
+  });
+  for (const id of snap.keys()) {
+    if (id !== "__order" && !next.has(id)) { data.deleted[id] = now; changed = true; }
+  }
+  for (const [id, t] of Object.entries(data.deleted)) if (now - t > 60 * 864e5) delete data.deleted[id];
+  if (changed) data.updatedAt = now;
+  snap = next;
+  store(KEY, JSON.stringify(data));
+  if (changed) Sync.schedule();
+}
 const current = () => data.lists.find(l => l.id === data.active) || data.lists[0];
 
 const $ = id => document.getElementById(id);
@@ -667,11 +755,12 @@ $("clear").onclick = () => {
 };
 
 /* ---------- Редактор категорий ---------- */
-function openEditor() { editing = true; app.classList.add("editing"); $("editBtn").classList.add("on"); renderEditor(); }
+function openEditor() { closeSync(); editing = true; app.classList.add("editing"); $("editBtn").classList.add("on"); renderEditor(); }
 function closeEditor() {
   data.lists.forEach(l => { if (!l.name.trim()) l.name = "Без названия"; });
   editing = false; app.classList.remove("editing"); $("editBtn").classList.remove("on");
   save(); render();
+  Sync.flushPending();
 }
 $("editBtn").onclick = () => editing ? closeEditor() : openEditor();
 $("doneEdit").onclick = closeEditor;
@@ -857,7 +946,339 @@ sortable(listEl, "y", ids => { const m = current(); m.items = byIds(m.items, ids
 sortable(tabsEl, "x", ids => { data.lists = byIds(data.lists, ids); save(); render(); });
 sortable($("catList"), "y", ids => { data.lists = byIds(data.lists, ids); save(); renderEditor(); });
 
+/* =====================================================================
+   СИНХРОНИЗАЦИЯ: Supabase + сквозное шифрование
+   В облако уходит только зашифрованный блок. Ключ получается из вашей
+   секретной фразы и хранится лишь на ваших устройствах — ни Supabase,
+   ни GitHub прочитать списки не могут.
+   ===================================================================== */
+const SUPABASE_URL = "https://apmgqqhjvqwqercrdavm.supabase.co";
+// Публичный anon-ключ: он и задуман для браузера. Без входа он ничего не открывает,
+// а после входа таблица отдаёт только вашу строку (Row Level Security).
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFwbWdxcWhqdnF3cWVyY3JkYXZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQxNTIxNTgsImV4cCI6MjEwOTcyODE1OH0.Xywwzl1OSZXDQOzJdu-vXKv3b-JrpaZ7q6UX6w7c85o";
+const SUPABASE_JS = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js";
+const KEY_STORE = "checklist-cryptokey:";
+const SYNCED_FLAG = "checklist-synced-once:";
+
+const te = new TextEncoder(), td = new TextDecoder();
+function b64(buf) {
+  const a = new Uint8Array(buf); let s = "";
+  for (let i = 0; i < a.length; i += 0x8000) s += String.fromCharCode.apply(null, a.subarray(i, i + 0x8000));
+  return btoa(s);
+}
+const unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+
+async function deriveKey(phrase, userId) {
+  const base = await crypto.subtle.importKey("raw", te.encode(phrase.normalize("NFC")), "PBKDF2", false, ["deriveKey"]);
+  return crypto.subtle.deriveKey(
+    { name: "PBKDF2", salt: te.encode("my-checklist:" + userId), iterations: 310000, hash: "SHA-256" },
+    base, { name: "AES-GCM", length: 256 }, true, ["encrypt", "decrypt"]);
+}
+async function encryptDoc(key, doc) {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, te.encode(JSON.stringify(doc)));
+  return { v: 1, iv: b64(iv), ct: b64(ct) };
+}
+async function decryptDoc(key, box) {
+  const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: unb64(box.iv) }, key, unb64(box.ct));
+  return JSON.parse(td.decode(pt));
+}
+
+/* --- слияние двух версий: побеждает более свежая правка каждого пункта --- */
+const syncDoc = d => ({ lists: d.lists, deleted: d.deleted || {}, updatedAt: d.updatedAt || 0 });
+function merge(a, b) {
+  const deleted = { ...(a.deleted || {}) };
+  for (const [k, v] of Object.entries(b.deleted || {})) deleted[k] = Math.max(deleted[k] || 0, v);
+  const [P, S] = (b.updatedAt || 0) > (a.updatedAt || 0) ? [b, a] : [a, b];   // порядок берём у более свежей версии
+  const pick = (x, y) => !y ? x : !x ? y : ((y.updatedAt || 0) > (x.updatedAt || 0) ? y : x);
+  const alive = e => !(deleted[e.id] && deleted[e.id] >= (e.updatedAt || 0));
+  const order = (pa, sa) => { const ids = pa.map(e => e.id); sa.forEach(e => { if (!ids.includes(e.id)) ids.push(e.id); }); return ids; };
+  const lists = order(P.lists, S.lists).map(id => {
+    const p = P.lists.find(l => l.id === id), s = S.lists.find(l => l.id === id);
+    const pi = p ? p.items : [], si = s ? s.items : [];
+    const items = order(pi, si).map(iid => pick(pi.find(i => i.id === iid), si.find(i => i.id === iid))).filter(alive);
+    return { ...pick(p, s), items };
+  }).filter(alive);
+  return { lists, deleted, updatedAt: Math.max(a.updatedAt || 0, b.updatedAt || 0) };
+}
+// Первая синхронизация устройства: одноимённые категории («Дела» и «Дела») объединяем, а не дублируем
+function adoptSameNames(local, remote) {
+  const norm = s => s.trim().toLowerCase();
+  const lists = [];
+  local.lists.forEach(l => {
+    const r = remote.lists.find(x => x.id !== l.id && norm(x.name) === norm(l.name));
+    if (!r) return lists.push(l);
+    const known = new Set(r.items.map(i => norm(i.text)));
+    const extra = l.items.filter(i => !known.has(norm(i.text)));
+    if (extra.length) lists.push({ ...r, items: [...r.items, ...extra] });
+  });
+  return { ...local, lists };
+}
+
+function loadScript(src) {
+  return new Promise((ok, fail) => {
+    const s = document.createElement("script");
+    s.src = src; s.onload = ok; s.onerror = fail;
+    document.head.appendChild(s);
+  });
+}
+
+const Sync = {
+  client: null, user: null, key: null, channel: null,
+  state: "off", message: "", step: "email", email: "", lastSync: null,
+  timer: null, running: false, again: false, pendingRemote: null, lastIv: null,
+
+  configured() { return !!(SUPABASE_URL && SUPABASE_KEY); },
+  set(state, message = "") { this.state = state; this.message = message; renderSync(); },
+
+  async init() {
+    if (!this.configured()) return this.set("off");
+    if (!window.crypto || !crypto.subtle) return this.set("error", "Шифрование доступно только по https");
+    try { await loadScript(SUPABASE_JS); }
+    catch (e) { return this.set("error", "Нет связи — синхронизация включится, когда появится интернет"); }
+    const fromLink = /access_token=|error_description=/.test(location.hash);
+    this.client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: "implicit", storageKey: "checklist-auth" },
+    });
+    const linkError = fromLink && new URLSearchParams(location.hash.slice(1)).get("error_description");
+    const { data: { session } } = await this.client.auth.getSession();
+    if (fromLink) history.replaceState(null, "", location.pathname + location.search);   // убираем токены из адреса
+    this.client.auth.onAuthStateChange((ev, s) => {
+      if (ev === "SIGNED_IN" && s && !this.user) this.afterLogin(s.user);
+    });
+    if (linkError) { openSync(); return this.set("signedout", "Ссылка не сработала: " + linkError + ". Запросите новую."); }
+    if (!session) return this.set("signedout");
+    await this.afterLogin(session.user);
+  },
+
+  async afterLogin(user) {
+    if (this.user && this.user.id === user.id && (this.key || this.state === "needkey")) return;
+    this.user = user;
+    const raw = read(KEY_STORE + user.id);
+    if (!raw) { this.step = "phrase"; this.set("needkey"); openSync(); return; }
+    this.key = await crypto.subtle.importKey("raw", unb64(raw), "AES-GCM", true, ["encrypt", "decrypt"]);
+    this.start();
+  },
+
+  async sendCode(email) {
+    const { error } = await this.client.auth.signInWithOtp({
+      email, options: { shouldCreateUser: true, emailRedirectTo: location.origin + location.pathname },
+    });
+    if (error) throw new Error(/rate limit/i.test(error.message)
+      ? "Слишком много писем подряд — подождите немного и попробуйте снова" : error.message);
+    this.email = email; this.step = "code"; renderSync();
+  },
+  // принимает ссылку из письма (или код, если письмо с кодом)
+  async verify(input) {
+    let res;
+    const m = input.match(/https?:\/\/\S+/);
+    if (m) {
+      const u = new URL(m[0]);
+      const tokenHash = u.searchParams.get("token") || u.searchParams.get("token_hash");
+      if (!tokenHash) throw new Error("В ссылке нет кода входа — скопируйте ссылку из письма целиком");
+      const type = u.searchParams.get("type") === "signup" ? "signup" : "magiclink";
+      res = await this.client.auth.verifyOtp({ token_hash: tokenHash, type });
+    } else {
+      res = await this.client.auth.verifyOtp({ email: this.email, token: input.replace(/\s/g, ""), type: "email" });
+    }
+    if (res.error) throw new Error(/expired|invalid/i.test(res.error.message)
+      ? "Ссылка устарела или уже использована — запросите новую" : res.error.message);
+    await this.afterLogin(res.data.user);
+  },
+  async setPhrase(phrase) {
+    const key = await deriveKey(phrase, this.user.id);
+    const row = await this.fetchRow();
+    if (row && row.data && row.data.ct) {
+      try { await decryptDoc(key, row.data); }
+      catch (e) { throw new Error("Фраза не подходит к данным в облаке. Введите ту же, что на другом устройстве."); }
+    }
+    this.key = key;
+    store(KEY_STORE + this.user.id, b64(await crypto.subtle.exportKey("raw", key)));
+    this.start();
+  },
+
+  start() { this.subscribe(); this.syncNow(); },
+
+  async fetchRow() {
+    const { data: row, error } = await this.client.from("checklists").select("data").eq("user_id", this.user.id).maybeSingle();
+    if (error) throw error;
+    return row;
+  },
+
+  schedule() {
+    if (!this.key) return;
+    this.set("pending");
+    clearTimeout(this.timer);
+    this.timer = setTimeout(() => this.syncNow(), 800);
+  },
+
+  // забрать облачную версию → слить с локальной → отправить результат
+  async syncNow() {
+    if (!this.key) return;
+    if (this.running) { this.again = true; return; }
+    this.running = true; this.set("pending");
+    try {
+      const row = await this.fetchRow();
+      const remote = row && row.data && row.data.ct ? await decryptDoc(this.key, row.data) : null;
+      if (remote && !read(SYNCED_FLAG + this.user.id)) {
+        const adopted = adoptSameNames(syncDoc(data), remote);
+        data = { ...data, lists: adopted.lists };
+        snap = takeSnap(data);
+        store(KEY, JSON.stringify(data));
+      }
+      const local = syncDoc(data);
+      const merged = remote ? merge(local, remote) : local;
+      if (!remote || JSON.stringify(merged) !== JSON.stringify(remote)) {
+        const box = await encryptDoc(this.key, merged);
+        this.lastIv = box.iv;
+        const { error } = await this.client.from("checklists")
+          .upsert({ user_id: this.user.id, data: box, updated_at: new Date().toISOString() });
+        if (error) throw error;
+      }
+      store(SYNCED_FLAG + this.user.id, "1");
+      this.apply(merged);
+      this.lastSync = new Date();
+      this.set("ok");
+    } catch (e) {
+      console.warn("sync:", e);
+      this.set("error", navigator.onLine ? "Не удалось синхронизировать" : "Нет интернета — синхронизирую, когда появится");
+    } finally {
+      this.running = false;
+      if (this.again) { this.again = false; this.syncNow(); }
+    }
+  },
+
+  // принять версию из облака (сливаем ещё раз — вдруг вы успели что-то поменять)
+  apply(doc) {
+    if (editing) { this.pendingRemote = doc; return; }
+    const before = JSON.stringify(syncDoc(data));
+    const merged = merge(syncDoc(data), doc);
+    if (JSON.stringify(merged) === before) return;
+    data = { ...merged, active: data.active };
+    snap = takeSnap(data);
+    store(KEY, JSON.stringify(data));
+    render();
+  },
+  flushPending() {
+    if (!this.pendingRemote) return;
+    const d = this.pendingRemote; this.pendingRemote = null;
+    this.apply(d);
+  },
+
+  // мгновенные обновления с других устройств
+  subscribe() {
+    if (this.channel) return;
+    this.channel = this.client.channel("checklist-" + this.user.id)
+      .on("postgres_changes",
+        { event: "*", schema: "public", table: "checklists", filter: "user_id=eq." + this.user.id },
+        async p => {
+          const box = p.new && p.new.data;
+          if (!box || !box.ct || box.iv === this.lastIv) return;
+          try { this.apply(await decryptDoc(this.key, box)); this.lastSync = new Date(); this.set("ok"); }
+          catch (e) { this.set("error", "Не удалось расшифровать изменения с другого устройства"); }
+        })
+      .subscribe();
+  },
+
+  async signOut() {
+    if (this.channel) { this.client.removeChannel(this.channel); this.channel = null; }
+    if (this.user) { try { localStorage.removeItem(KEY_STORE + this.user.id); } catch (e) {} }
+    await this.client.auth.signOut().catch(() => {});
+    this.user = null; this.key = null; this.step = "email";
+    this.set("signedout");
+  },
+};
+
+/* --- панель синхронизации --- */
+let syncing = false;
+function openSync() { if (editing) closeEditor(); syncing = true; app.classList.add("syncing"); $("syncBtn").classList.add("on"); renderSync(); }
+function closeSync() { syncing = false; app.classList.remove("syncing"); $("syncBtn").classList.remove("on"); }
+$("syncBtn").onclick = () => syncing ? closeSync() : openSync();
+$("closeSync").onclick = closeSync;
+
+function renderSync() {
+  const btn = $("syncBtn");
+  btn.classList.remove("ok", "pending", "error", "needkey");
+  if (["ok", "pending", "error", "needkey"].includes(Sync.state)) btn.classList.add(Sync.state);
+  btn.title = { ok: "Синхронизировано", pending: "Синхронизация…", error: "Ошибка синхронизации", needkey: "Нужна секретная фраза" }[Sync.state] || "Синхронизация";
+  if (!syncing) return;
+
+  const body = $("syncBody");
+  const S = Sync;
+  const busyForm = (html, onSubmit) => {
+    body.innerHTML = html;
+    const f = body.querySelector("form"), err = body.querySelector(".sync-error"), b = f.querySelector("button[type=submit]");
+    f.onsubmit = async e => {
+      e.preventDefault();
+      err.textContent = ""; b.disabled = true;
+      try { await onSubmit(f); }
+      catch (x) { err.textContent = x.message || "Что-то пошло не так"; }
+      finally { b.disabled = false; }
+    };
+    const first = f.querySelector("input"); if (first) setTimeout(() => first.focus(), 50);
+  };
+
+  if (S.state === "off") {
+    body.innerHTML = `<p>Синхронизация ещё не подключена к серверу.</p>`;
+    return;
+  }
+  if (!S.client) {
+    body.innerHTML = `<p>${S.message || "Подключаюсь…"}</p>`;
+    return;
+  }
+  if (!S.user && S.step !== "code") {
+    busyForm(`
+      <p>Войдите по почте — придёт письмо со ссылкой для входа. Пароль не нужен.</p>
+      <form><input class="field" type="email" name="email" required placeholder="you@example.com" autocomplete="email">
+      <button class="btn" type="submit">Отправить ссылку</button><div class="sync-error"></div></form>`,
+      f => { S.message = ""; return S.sendCode(f.email.value.trim()); });
+    body.querySelector(".sync-error").textContent = S.message || "";   // текст ошибки — только как текст
+    return;
+  }
+  if (!S.user && S.step === "code") {
+    busyForm(`
+      <p>Письмо отправлено на <b class="em"></b> (проверьте и «Спам»).</p>
+      <p><b>Компьютер, Android:</b> просто откройте ссылку из письма.</p>
+      <p><b>iPhone с приложением на экране «Домой»:</b> удерживайте ссылку в письме → «Скопировать» → вставьте сюда:</p>
+      <form><input class="field" name="code" required autocomplete="off" placeholder="Вставьте ссылку из письма">
+      <button class="btn" type="submit">Войти</button><div class="sync-error"></div></form>
+      <button class="link-btn" id="backToEmail">← другая почта / отправить ещё раз</button>`,
+      f => S.verify(f.code.value.trim()));
+    body.querySelector(".em").textContent = S.email;
+    $("backToEmail").onclick = () => { S.step = "email"; renderSync(); };
+    return;
+  }
+  if (!S.key) {
+    busyForm(`
+      <p>Придумайте <b>секретную фразу</b>. Ею списки шифруются прямо на устройстве — в облако уходит только шифр.</p>
+      <p style="color:var(--muted);font-size:15px">На всех устройствах вводите одну и ту же фразу. Если её забыть, облачную копию не прочитать (списки на устройствах останутся).</p>
+      <form><input class="field" type="password" name="phrase" required minlength="8" placeholder="Не короче 8 символов" autocomplete="new-password">
+      <button class="btn" type="submit">Включить синхронизацию</button><div class="sync-error"></div></form>
+      <button class="link-btn" id="signOutBtn">Выйти</button>`,
+      f => S.setPhrase(f.phrase.value));
+    $("signOutBtn").onclick = () => S.signOut();
+    return;
+  }
+  const when = S.lastSync ? S.lastSync.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }) : "—";
+  const status = { ok: `Синхронизировано в ${when}`, pending: "Синхронизирую…", error: S.message }[S.state] || "";
+  body.innerHTML = `
+    <p class="who">Вход: <b class="em"></b></p>
+    <p>${status}</p>
+    <p style="color:var(--muted);font-size:15px">Изменения сами появляются на всех устройствах, где вы вошли. Данные зашифрованы вашей фразой.</p>
+    <div class="sync-row" style="margin-top:4px">
+      <button class="link-btn" id="signOutBtn">Выйти на этом устройстве</button>
+      <button class="link-btn" id="syncNowBtn">Синхронизировать сейчас</button>
+    </div>`;
+  body.querySelector(".em").textContent = S.user.email || "";
+  $("signOutBtn").onclick = () => S.signOut();
+  $("syncNowBtn").onclick = () => S.syncNow();
+}
+
+window.addEventListener("online", () => Sync.syncNow());
+document.addEventListener("visibilitychange", () => { if (!document.hidden) Sync.syncNow(); });
+
 render();
+Sync.init().catch(e => { console.warn(e); Sync.set("error", "Синхронизация недоступна"); });
 
 /* ---------- PWA: работа без интернета ---------- */
 if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
