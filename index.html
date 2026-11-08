@@ -112,8 +112,42 @@
     border: 1px solid var(--line);
     border-radius: 6px;
     padding: 34px 30px 24px;
-    box-shadow: 0 30px 80px -20px rgba(0,0,0,.8), inset 0 1px 0 rgba(255,255,255,.04);
+    /* глубина: внешняя тень + двойная тонкая рамка внутри */
+    box-shadow:
+      0 30px 80px -20px rgba(0,0,0,.85),
+      0 0 0 1px rgba(0,0,0,.6),
+      inset 0 1px 0 rgba(255,255,255,.06),
+      inset 0 0 0 5px rgba(0,0,0,.28),
+      inset 0 0 0 6px rgba(233,226,210,.07),
+      inset 0 0 60px rgba(0,0,0,.35);
     align-self: flex-start;
+    transition: box-shadow 2s, border-color 2s;
+  }
+
+  /* функциональные зоны */
+  header {
+    padding-bottom: 16px;
+    margin-bottom: 4px;
+    border-bottom: 1px solid var(--line);
+    box-shadow: 0 1px 0 rgba(0,0,0,.45);
+  }
+  .zone {
+    background: rgba(0,0,0,.22);
+    border: 1px solid rgba(0,0,0,.5);
+    border-radius: 4px;
+    box-shadow: inset 0 1px 0 rgba(0,0,0,.4), 0 1px 0 rgba(233,226,210,.05);
+  }
+  .input-zone { padding: 10px; margin-bottom: 12px; }
+  .input-zone form.add-form { margin: 0; }
+  .list-zone { padding: 4px 12px; }
+  .list-zone:has(> ul:empty) { padding: 0 12px; }
+  .zone-label {
+    font-size: 12px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 2px 6px;
+    display: flex; justify-content: space-between; align-items: center;
   }
   .app::before, .app::after {
     /* тонкие уголки-орнамент */
@@ -126,6 +160,7 @@
   .app::after  { bottom: 8px; right: 8px; border-left: 0; border-top: 0; }
 
   header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  .tabs { margin-top: 6px; }
   h1 {
     font-family: "Cormorant Garamond", Georgia, serif;
     font-weight: 500;
@@ -135,7 +170,7 @@
     letter-spacing: .01em;
   }
   h1 em { color: var(--accent); transition: color .4s; }
-  .date { color: var(--muted); font-size: 15px; font-style: italic; margin-bottom: 22px; }
+  .date { color: var(--muted); font-size: 15px; font-style: italic; }
   .date b { font-weight: 500; color: var(--ink); font-style: normal; letter-spacing: .05em; }
 
   .icon-btn {
@@ -226,10 +261,14 @@
     gap: 12px;
     padding: 10px 4px;
     border-bottom: 1px solid var(--line);
-    animation: appear .3s ease;
   }
   li.item:last-child { border-bottom: none; }
-  @keyframes appear { from { opacity: 0; transform: translateY(-4px); } }
+  /* появление: анимируется только только что добавленный пункт;
+     если добавлять подряд — почти незаметно */
+  li.item.new { animation: appear .26s ease-out; }
+  li.item.new.quick { animation: appear-soft .14s linear; }
+  @keyframes appear { from { opacity: 0; transform: translateY(-3px); } }
+  @keyframes appear-soft { from { opacity: .35; } }
 
   .check {
     appearance: none; -webkit-appearance: none;
@@ -271,7 +310,13 @@
     padding: 26px 0 18px;
   }
 
-  .footer { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; font-size: 14px; color: var(--muted); }
+  .footer {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 12px; padding-top: 12px;
+    border-top: 1px solid var(--line);
+    box-shadow: inset 0 1px 0 rgba(0,0,0,.45);
+    font-size: 14px; color: var(--muted);
+  }
   .progress { flex: 1; height: 2px; background: var(--line); margin: 0 12px; overflow: hidden; }
   .progress span { display: block; height: 100%; background: var(--accent); transition: width .35s; box-shadow: 0 0 8px var(--accent); }
   .link-btn { background: none; border: none; font: inherit; color: var(--muted); cursor: pointer; padding: 0; }
@@ -315,6 +360,120 @@
   }
   .btn:hover { background: var(--accent); }
   .hint { font-size: 13px; color: var(--muted); font-style: italic; margin-top: 12px; }
+
+  /* ---------- Вид списка: переключатель ---------- */
+  .view-toggle { display: flex; gap: 2px; }
+  .view-toggle button {
+    background: none; border: 1px solid transparent; color: var(--muted);
+    font: inherit; font-size: 12px; letter-spacing: .08em; text-transform: uppercase;
+    padding: 2px 8px; border-radius: 3px; cursor: pointer;
+  }
+  .view-toggle button.on { color: var(--ink); border-color: var(--line); background: rgba(255,255,255,.03); }
+
+  /* ---------- Матрица Эйзенхауэра ---------- */
+  .matrix {
+    display: grid;
+    grid-template-columns: 16px 1fr 1fr;
+    grid-template-rows: auto auto auto;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  .axis {
+    font-size: 11px; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--muted); text-align: center; opacity: .8;
+  }
+  .axis.v { writing-mode: vertical-rl; transform: rotate(180deg); align-self: center; }
+  .quad {
+    --q: var(--muted);
+    position: relative;
+    display: flex; flex-direction: column;
+    min-height: 120px;
+    padding: 8px 8px 6px;
+    border-radius: 4px;
+    border: 1px solid rgba(0,0,0,.55);
+    background:
+      linear-gradient(160deg, color-mix(in srgb, var(--q) 16%, transparent), transparent 55%),
+      rgba(0,0,0,.22);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--q) 14%, transparent), inset 0 1px 0 rgba(0,0,0,.4);
+    transition: box-shadow .2s, background-color .2s;
+  }
+  .quad[data-key="1"] { --q: #b3262b; }
+  .quad[data-key="2"] { --q: #c9b27c; }
+  .quad[data-key="3"] { --q: #c8782f; }
+  .quad[data-key="4"] { --q: #6b6f7a; }
+  .quad-head {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 6px;
+    cursor: pointer; user-select: none; -webkit-user-select: none;
+    padding-bottom: 5px; margin-bottom: 2px;
+    border-bottom: 1px solid color-mix(in srgb, var(--q) 25%, transparent);
+  }
+  .quad-title {
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-size: 18px; font-weight: 600; line-height: 1.1;
+    color: color-mix(in srgb, var(--q) 55%, var(--ink));
+  }
+  .quad-sub { display: block; font-size: 11.5px; color: var(--muted); font-style: italic; font-weight: 400; font-family: "EB Garamond", serif; }
+  .quad-count { font-size: 12px; color: var(--muted); }
+  .quad.target { box-shadow: inset 0 0 0 1px var(--q), 0 0 18px -4px var(--q); }
+  .quad.target .quad-head::after { content: "＋"; color: var(--q); margin-left: 4px; }
+  .qlist { flex: 1; min-height: 40px; border-radius: 3px; transition: background .15s; }
+  .qlist.over { background: rgba(255,255,255,.04); }
+  .qlist li.item { gap: 7px; padding: 6px 0; font-size: 15px; line-height: 1.25; }
+  .qlist .check { width: 13px; height: 13px; margin: 0 2px; }
+  .qlist .grip { display: none; }
+  .qlist .del { font-size: 16px; padding: 2px 3px; }
+  .qlist:empty::before {
+    content: attr(data-hint);
+    display: block; padding: 10px 2px 4px;
+    font-size: 13px; font-style: italic; color: color-mix(in srgb, var(--muted) 70%, transparent);
+  }
+  .inbox { margin-bottom: 10px; }
+  .inbox .qlist:empty::before { padding: 8px 2px; }
+  .inbox .qlist li.item { font-size: 16px; }
+  @media (max-width: 420px) {
+    .quad { min-height: 100px; padding: 6px 6px 4px; }
+    .quad-title { font-size: 16px; }
+    .quad-sub { display: none; }
+    .qlist li.item { font-size: 14px; }
+  }
+
+  /* ---------- Кровавая луна ---------- */
+  .blood-layer { opacity: 0; transition: opacity 2.6s ease; }
+  body.blood .blood-layer { opacity: 1; }
+  #flowers use { transition: fill 2.6s ease; }
+  body.blood #flowers use { fill: #c4464a; }
+  .win { transition: fill 2.6s ease; }
+  body.blood .win { fill: #ff4a36; }
+  .leaf { transition: background-color 2.6s ease; }
+  body.blood .leaf { background-color: #7d0d12 !important; }
+  body.blood {
+    --line: rgba(214, 120, 110, 0.15);
+    --muted: #9b7f78;
+    --card: rgba(18, 8, 10, 0.74);
+  }
+  body.blood .app {
+    border-color: rgba(150, 25, 30, .45);
+    box-shadow:
+      0 30px 80px -20px rgba(0,0,0,.85),
+      0 0 0 1px rgba(0,0,0,.6),
+      0 0 90px -20px rgba(170, 10, 20, .45),
+      inset 0 1px 0 rgba(255,140,130,.06),
+      inset 0 0 0 5px rgba(0,0,0,.3),
+      inset 0 0 0 6px rgba(200, 60, 60, .12),
+      inset 0 0 60px rgba(60, 0, 0, .35);
+  }
+  body.blood .app::before, body.blood .app::after { border-color: rgba(220, 80, 80, .5); }
+  .omen { display: none; color: #d0383e; font-style: italic; }
+  body.blood .omen { display: inline; }
+  .blood-flash {
+    position: fixed; inset: 0; z-index: 3; pointer-events: none;
+    background: radial-gradient(circle at 72% 26%, rgba(200, 20, 30, .55), rgba(60, 0, 0, .35) 45%, transparent 75%);
+    opacity: 0;
+  }
+  .blood-flash.go { animation: bloodflash 1.6s ease-out; }
+  @keyframes bloodflash { 0% { opacity: 0; } 18% { opacity: 1; } 100% { opacity: 0; } }
+  #moonBtn { font-size: 17px; transition: color 1s, border-color 1s, text-shadow 1s; }
+  body.blood #moonBtn { color: #e0343b; border-color: rgba(200,40,40,.6); text-shadow: 0 0 10px rgba(255,40,40,.7); }
 
   /* ---------- Синхронизация ---------- */
   .head-btns { display: flex; gap: 8px; }
@@ -369,6 +528,7 @@
 </style>
 </head>
 <body>
+<script>try { if (localStorage.getItem("checklist-theme") === "blood") document.body.classList.add("blood"); } catch (e) {}</script>
 
 <!-- ========== Фоновая картина: готический город под полной луной ========== -->
 <svg class="art" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
@@ -403,6 +563,28 @@
       <stop offset=".55" stop-color="#000" stop-opacity="0"/>
       <stop offset="1" stop-color="#000" stop-opacity=".75"/>
     </radialGradient>
+    <!-- кровавая луна -->
+    <linearGradient id="skyBlood" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0d0204"/>
+      <stop offset=".45" stop-color="#2e070b"/>
+      <stop offset=".75" stop-color="#5a1013"/>
+      <stop offset="1" stop-color="#6e2a1e"/>
+    </linearGradient>
+    <radialGradient id="moonGlowBlood">
+      <stop offset="0" stop-color="#ff5a4a" stop-opacity=".6"/>
+      <stop offset=".35" stop-color="#b3121c" stop-opacity=".25"/>
+      <stop offset="1" stop-color="#7a0010" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="moonBlood" cx=".42" cy=".4">
+      <stop offset="0" stop-color="#ff8a6e"/>
+      <stop offset=".55" stop-color="#d5352c"/>
+      <stop offset="1" stop-color="#8a1218"/>
+    </radialGradient>
+    <linearGradient id="fogBlood" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#b0303a" stop-opacity="0"/>
+      <stop offset=".5" stop-color="#b0303a" stop-opacity=".26"/>
+      <stop offset="1" stop-color="#b0303a" stop-opacity="0"/>
+    </linearGradient>
     <filter id="blur8"><feGaussianBlur stdDeviation="8"/></filter>
     <filter id="blur20"><feGaussianBlur stdDeviation="20"/></filter>
     <g id="flower">
@@ -415,6 +597,7 @@
   </defs>
 
   <rect width="1440" height="900" fill="url(#sky)"/>
+  <rect class="blood-layer" width="1440" height="900" fill="url(#skyBlood)"/>
 
   <!-- луна -->
   <circle cx="1060" cy="230" r="330" fill="url(#moonGlow)"/>
@@ -422,6 +605,14 @@
   <g fill="#b9ad8e" opacity=".3" filter="url(#blur8)">
     <circle cx="1020" cy="200" r="22"/><circle cx="1100" cy="270" r="30"/>
     <circle cx="1085" cy="185" r="12"/><circle cx="1030" cy="280" r="10"/>
+  </g>
+  <g class="blood-layer">
+    <circle cx="1060" cy="230" r="380" fill="url(#moonGlowBlood)"/>
+    <circle cx="1060" cy="230" r="128" fill="url(#moonBlood)"/>
+    <g fill="#5e0a10" opacity=".35" filter="url(#blur8)">
+      <circle cx="1020" cy="200" r="22"/><circle cx="1100" cy="270" r="30"/>
+      <circle cx="1085" cy="185" r="12"/><circle cx="1030" cy="280" r="10"/>
+    </g>
   </g>
 
   <!-- дальний город в тумане -->
@@ -434,6 +625,7 @@
     <rect x="1310" y="570" width="130" height="130"/><polygon points="1310,570 1375,520 1440,570"/>
   </g>
   <rect class="fog slow" x="-100" y="480" width="1640" height="200" fill="url(#fogGrad)"/>
+  <g class="blood-layer"><rect class="fog slow" x="-100" y="480" width="1640" height="200" fill="url(#fogBlood)"/></g>
 
   <!-- собор -->
   <g fill="#121621">
@@ -450,7 +642,7 @@
     <rect x="1130" y="520" width="120" height="180"/><polygon points="1130,520 1190,468 1250,520"/>
   </g>
   <!-- окна -->
-  <g fill="#e8a24a" class="flicker">
+  <g fill="#e8a24a" class="flicker win">
     <circle cx="980" cy="420" r="12" opacity=".75"/>
     <rect x="874" y="470" width="10" height="26" rx="5" opacity=".8"/>
     <rect x="1074" y="480" width="10" height="26" rx="5" opacity=".6"/>
@@ -483,7 +675,7 @@
     <rect x="356" y="560" width="6" height="160" fill="#0a0c12"/>
     <rect x="346" y="548" width="26" height="16" fill="#0a0c12"/>
     <polygon points="349,548 359,532 369,548" fill="#0a0c12"/>
-    <rect x="351" y="550" width="16" height="12" fill="#ffc46b" class="flicker"/>
+    <rect x="351" y="550" width="16" height="12" fill="#ffc46b" class="flicker win"/>
     <circle cx="359" cy="556" r="110" fill="url(#lamp)" class="flicker"/>
   </g>
 
@@ -520,9 +712,11 @@
   <g id="flowers"></g>
 
   <rect class="fog slow" x="-100" y="760" width="1640" height="160" fill="url(#fogGrad)" opacity=".7"/>
+  <g class="blood-layer"><rect class="fog slow" x="-100" y="760" width="1640" height="160" fill="url(#fogBlood)"/></g>
   <rect width="1440" height="900" fill="url(#vignette)"/>
 </svg>
 <div class="leaves" id="leaves" aria-hidden="true"></div>
+<div class="blood-flash" id="bloodFlash" aria-hidden="true"></div>
 
 <!-- ========== Приложение ========== -->
 <main class="app" id="app">
@@ -532,6 +726,7 @@
       <div class="date" id="date"></div>
     </div>
     <div class="head-btns">
+      <button class="icon-btn" id="moonBtn" title="Кровавая луна" aria-label="Кровавая луна">☾</button>
       <button class="icon-btn" id="syncBtn" title="Синхронизация" aria-label="Синхронизация">☁<span class="dot"></span></button>
       <button class="icon-btn" id="editBtn" title="Редактировать категории" aria-label="Редактировать категории">✎</button>
     </div>
@@ -540,12 +735,56 @@
   <section class="main-view">
     <nav class="tabs" id="tabs"></nav>
     <div id="listArea">
-      <form class="add-form" id="form" autocomplete="off">
-        <input type="text" id="input" maxlength="200" placeholder="Добавить пункт…">
-        <button class="add" type="submit" aria-label="Добавить">+</button>
-      </form>
-      <ul id="list"></ul>
-      <div class="empty" id="empty"></div>
+      <div class="zone input-zone">
+        <form class="add-form" id="form" autocomplete="off">
+          <input type="text" id="input" maxlength="200" placeholder="Добавить пункт…">
+          <button class="add" type="submit" aria-label="Добавить">+</button>
+        </form>
+      </div>
+
+      <div class="zone-label">
+        <span id="viewLabel">Пункты</span>
+        <div class="view-toggle" role="group" aria-label="Вид">
+          <button type="button" data-view="list">Список</button>
+          <button type="button" data-view="matrix">Матрица</button>
+        </div>
+      </div>
+
+      <div class="zone list-zone" id="listView">
+        <ul id="list"></ul>
+        <div class="empty" id="empty"></div>
+      </div>
+
+      <div id="matrixView" style="display:none">
+        <div class="matrix">
+          <span></span>
+          <div class="axis">Срочно</div>
+          <div class="axis">Не срочно</div>
+          <div class="axis v">Важно</div>
+          <div class="quad" data-key="1">
+            <div class="quad-head" title="Добавлять сюда"><span class="quad-title">Сейчас<span class="quad-sub">горит и важно</span></span><span class="quad-count"></span></div>
+            <ul class="qlist" data-key="1" data-hint="Сделать сегодня"></ul>
+          </div>
+          <div class="quad" data-key="2">
+            <div class="quad-head" title="Добавлять сюда"><span class="quad-title">Запланировать<span class="quad-sub">важно, не горит</span></span><span class="quad-count"></span></div>
+            <ul class="qlist" data-key="2" data-hint="Назначить время"></ul>
+          </div>
+          <div class="axis v">Не важно</div>
+          <div class="quad" data-key="3">
+            <div class="quad-head" title="Добавлять сюда"><span class="quad-title">Поручить<span class="quad-sub">горит, но не важно</span></span><span class="quad-count"></span></div>
+            <ul class="qlist" data-key="3" data-hint="Кому отдать?"></ul>
+          </div>
+          <div class="quad" data-key="4">
+            <div class="quad-head" title="Добавлять сюда"><span class="quad-title">Отпустить<span class="quad-sub">ни то ни другое</span></span><span class="quad-count"></span></div>
+            <ul class="qlist" data-key="4" data-hint="Пусть уходит в туман"></ul>
+          </div>
+        </div>
+        <div class="zone inbox">
+          <div class="zone-label" style="padding:8px 10px 0;margin:0">Неразобранное <span id="inboxCount"></span></div>
+          <ul class="qlist" data-key="0" data-hint="Новые пункты попадают сюда — перетащите их в квадрат" style="padding:0 10px 4px"></ul>
+        </div>
+      </div>
+
       <div class="footer" id="footer">
         <span id="stats"></span>
         <div class="progress"><span id="bar"></span></div>
@@ -626,8 +865,8 @@ let editing = false;
 function takeSnap(d) {
   const m = new Map();
   d.lists.forEach(l => {
-    m.set(l.id, JSON.stringify([l.name, l.color]));
-    l.items.forEach(i => m.set(i.id, JSON.stringify([i.text, !!i.done])));
+    m.set(l.id, JSON.stringify([l.name, l.color, l.view || ""]));
+    l.items.forEach(i => m.set(i.id, JSON.stringify([i.text, !!i.done, i.q || 0])));
   });
   m.set("__order", d.lists.map(l => l.id + ":" + l.items.map(i => i.id).join(",")).join("|"));
   return m;
@@ -661,7 +900,7 @@ function updateDate() {
   const now = new Date();
   const day = now.toLocaleDateString("ru-RU", { weekday: "long", day: "numeric", month: "long" });
   const time = now.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
-  $("date").innerHTML = `${day} · <b>${time}</b>`;
+  $("date").innerHTML = `${day} · <b>${time}</b> <span class="omen">· кровавая луна</span>`;
 }
 updateDate();
 setInterval(updateDate, 15000);
@@ -690,17 +929,73 @@ function render() {
     c.className = "count";
     c.textContent = left || "";
     b.appendChild(c);
-    b.onclick = () => { data.active = l.id; save(); render(); input.focus(); };
+    b.onclick = () => { data.active = l.id; addTarget = 0; save(); render(); input.focus(); };
     b.ondblclick = () => openEditor();
     tabsEl.appendChild(b);
   });
   if (!has) return;
 
-  input.placeholder = `Добавить в «${meta.name}»…`;
+  const matrix = viewOf(meta) === "matrix";
+  if (!matrix) addTarget = 0;
+  document.querySelectorAll(".view-toggle button").forEach(b => b.classList.toggle("on", b.dataset.view === (matrix ? "matrix" : "list")));
+  $("viewLabel").textContent = matrix ? "Срочность × важность" : "Пункты";
+  $("listView").style.display = matrix ? "none" : "";
+  $("matrixView").style.display = matrix ? "" : "none";
+  const target = addTarget && QUADS[addTarget];
+  input.placeholder = target ? `Добавить в «${target}»…` : `Добавить в «${meta.name}»…`;
+  document.querySelectorAll(".quad").forEach(q => q.classList.toggle("target", +q.dataset.key === addTarget));
+
   listEl.innerHTML = "";
+  const qlists = {};
+  document.querySelectorAll("#matrixView .qlist").forEach(u => { u.innerHTML = ""; qlists[u.dataset.key] = u; });
   meta.items.forEach(item => {
+    const li = makeItem(item, meta);
+    if (matrix) qlists[QUADS[item.q] ? item.q : 0].appendChild(li);
+    else listEl.appendChild(li);
+  });
+  if (matrix) {
+    document.querySelectorAll(".quad").forEach(q => {
+      const left = meta.items.filter(i => i.q === +q.dataset.key && !i.done).length;
+      q.querySelector(".quad-count").textContent = left || "";
+    });
+    const inbox = meta.items.filter(i => !QUADS[i.q]).length;
+    $("inboxCount").textContent = inbox ? "· " + inbox : "";
+  }
+  justAdded = null;
+
+  const n = meta.items.length, done = meta.items.filter(i => i.done).length;
+  $("empty").textContent = n ? "" : "Здесь пока тихо… только туман и луна";
+  $("empty").style.display = n ? "none" : "block";
+  $("footer").style.display = n ? "flex" : "none";
+  $("stats").textContent = `${done} из ${n}`;
+  $("bar").style.width = n ? (done / n * 100) + "%" : "0";
+  $("clear").disabled = done === 0;
+}
+
+/* ---------- Матрица Эйзенхауэра ---------- */
+const QUADS = { 1: "Сейчас", 2: "Запланировать", 3: "Поручить", 4: "Отпустить" };
+let addTarget = 0;       // в какой квадрат добавлять новые пункты (0 — «Неразобранное»)
+// по умолчанию матрица включена у «Дел», у остальных — обычный список
+const viewOf = l => l.view || (/^дела$/i.test(l.name.trim()) ? "matrix" : "list");
+
+document.querySelectorAll(".view-toggle button").forEach(b => b.onclick = () => {
+  const m = current(); if (!m) return;
+  m.view = b.dataset.view;
+  save(); render();
+});
+document.querySelectorAll(".quad-head").forEach(h => h.onclick = () => {
+  const k = +h.parentElement.dataset.key;
+  addTarget = addTarget === k ? 0 : k;
+  render();
+  input.focus();
+});
+
+/* ---------- Пункт ---------- */
+let justAdded = null, lastAddAt = 0;
+function makeItem(item, meta) {
     const li = document.createElement("li");
     li.className = "item" + (item.done ? " done" : "");
+    if (justAdded && justAdded.id === item.id) li.classList.add("new", ...(justAdded.quick ? ["quick"] : []));
     li.dataset.id = item.id;
 
     const grip = document.createElement("span");
@@ -727,16 +1022,7 @@ function render() {
     del.onclick = () => { meta.items = meta.items.filter(i => i.id !== item.id); save(); render(); };
 
     li.append(grip, cb, span, del);
-    listEl.appendChild(li);
-  });
-
-  const n = meta.items.length, done = meta.items.filter(i => i.done).length;
-  $("empty").textContent = n ? "" : "Здесь пока тихо… только туман и луна";
-  $("empty").style.display = n ? "none" : "block";
-  $("footer").style.display = n ? "flex" : "none";
-  $("stats").textContent = `${done} из ${n}`;
-  $("bar").style.width = n ? (done / n * 100) + "%" : "0";
-  $("clear").disabled = done === 0;
+    return li;
 }
 
 $("form").onsubmit = e => {
@@ -744,7 +1030,12 @@ $("form").onsubmit = e => {
   const text = input.value.trim();
   const meta = current();
   if (!text || !meta) return;
-  meta.items.push({ id: uid(), text, done: false });
+  const item = { id: uid(), text, done: false };
+  if (addTarget && viewOf(meta) === "matrix") item.q = addTarget;
+  meta.items.push(item);
+  const now = Date.now();
+  justAdded = { id: item.id, quick: now - lastAddAt < 1500 };   // добавляете подряд — анимация почти незаметна
+  lastAddAt = now;
   input.value = "";
   save(); render();
 };
@@ -837,19 +1128,20 @@ function renderEditor() {
 
 /* ---------- Перетаскивание (мышь и палец) ----------
    • за ⋮⋮ — сразу;
-   • за сам пункт/вкладку: мышью — просто тянуть, пальцем — удержать ~0,3 с и тянуть. */
-function sortable(container, axis, onEnd) {
+   • за сам пункт/вкладку: мышью — просто тянуть, пальцем — удержать ~0,3 с и тянуть;
+   • можно переносить между несколькими контейнерами (квадраты матрицы). */
+function sortable(root, getContainers, axis, onEnd) {
   const EXCLUDE = "input, button.del, .swatch, .check";
   let state = null;
 
-  container.addEventListener("pointerdown", e => {
+  root.addEventListener("pointerdown", e => {
     if (e.button !== 0 || state) return;
     const el = e.target.closest("[data-id]");
-    if (!el || el.parentElement !== container) return;
+    if (!el || !root.contains(el) || !getContainers().includes(el.parentElement)) return;
     const onGrip = !!e.target.closest(".grip");
     if (!onGrip && e.target.closest(EXCLUDE)) return;
     // в редакторе тянем только за ⋮⋮, чтобы не мешать вводу текста
-    if (!onGrip && container.id === "catList") return;
+    if (!onGrip && root.id === "catList") return;
 
     state = { el, id: e.pointerId, x: e.clientX, y: e.clientY, dragging: false, timer: null, touch: e.pointerType !== "mouse" };
     if (onGrip) { e.preventDefault(); start(); }
@@ -871,6 +1163,15 @@ function sortable(container, axis, onEnd) {
     if (state.touch && navigator.vibrate) navigator.vibrate(12);
   }
 
+  // контейнер под указателем (для квадрата матрицы — весь квадрат, вместе с заголовком)
+  function containerAt(conts, x, y) {
+    for (const c of conts) {
+      const r = (c.closest(".quad, .inbox") || c).getBoundingClientRect();
+      if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return c;
+    }
+    return null;
+  }
+
   function move(e) {
     if (!state || e.pointerId !== state.id) return;
     const dx = e.clientX - state.x, dy = e.clientY - state.y;
@@ -880,17 +1181,23 @@ function sortable(container, axis, onEnd) {
       start();                                 // мышь: начали тянуть
     }
     e.preventDefault();
-    const pos = axis === "y" ? e.clientY : e.clientX;
     const el = state.el;
-    const sibs = [...container.children].filter(c => c !== el && c.dataset.id);
+    const conts = getContainers();
+    const target = (conts.length > 1 && containerAt(conts, e.clientX, e.clientY)) || el.parentElement;
+    if (conts.length > 1) conts.forEach(c => c.classList.toggle("over", c === target));
+
+    const pos = axis === "y" ? e.clientY : e.clientX;
+    const sibs = [...target.children].filter(c => c !== el && c.dataset.id);
     let before = null;
     for (const s of sibs) {
       const r = s.getBoundingClientRect();
       const mid = axis === "y" ? r.top + r.height / 2 : r.left + r.width / 2;
       if (pos < mid) { before = s; break; }
     }
-    if (before ? el.nextElementSibling !== before : container.lastElementChild !== el) {
-      flip(sibs, () => before ? container.insertBefore(el, before) : container.appendChild(el));
+    const moved = el.parentElement !== target || (before ? el.nextElementSibling !== before : target.lastElementChild !== el);
+    if (moved) {
+      const affected = conts.flatMap(c => [...c.children].filter(x => x !== el && x.dataset.id));
+      flip(affected, () => before ? target.insertBefore(el, before) : target.appendChild(el));
     }
     if (axis === "x") el.scrollIntoView({ block: "nearest", inline: "nearest" });
   }
@@ -916,6 +1223,7 @@ function sortable(container, axis, onEnd) {
     clearTimeout(state.timer);
     state.el.classList.remove("pressing", "dragging");
     document.body.classList.remove("sorting");
+    getContainers().forEach(c => c.classList.remove("over"));
     window.removeEventListener("pointermove", move);
     window.removeEventListener("pointerup", end);
     window.removeEventListener("pointercancel", cancel);
@@ -929,22 +1237,40 @@ function sortable(container, axis, onEnd) {
     if (was) {
       // клик после перетаскивания не должен отмечать пункт / переключать вкладку
       const stop = ev => { ev.stopPropagation(); ev.preventDefault(); };
-      container.addEventListener("click", stop, true);
-      setTimeout(() => container.removeEventListener("click", stop, true), 0);
+      root.addEventListener("click", stop, true);
+      setTimeout(() => root.removeEventListener("click", stop, true), 0);
       commit();
     }
   }
-  function commit() { onEnd([...container.children].map(c => c.dataset.id).filter(Boolean)); }
+  function commit() {
+    onEnd(getContainers().map(c => ({ key: c.dataset.key, ids: [...c.children].map(x => x.dataset.id).filter(Boolean) })));
+  }
 
   // пока тянем пальцем — страница не прокручивается
-  container.addEventListener("touchmove", e => { if (state && state.dragging) e.preventDefault(); }, { passive: false });
-  container.addEventListener("contextmenu", e => { if (state) e.preventDefault(); });
+  root.addEventListener("touchmove", e => { if (state && state.dragging) e.preventDefault(); }, { passive: false });
+  root.addEventListener("contextmenu", e => { if (state) e.preventDefault(); });
 }
 
 const byIds = (arr, ids) => ids.map(id => arr.find(x => x.id === id)).filter(Boolean);
-sortable(listEl, "y", ids => { const m = current(); m.items = byIds(m.items, ids); save(); render(); });
-sortable(tabsEl, "x", ids => { data.lists = byIds(data.lists, ids); save(); render(); });
-sortable($("catList"), "y", ids => { data.lists = byIds(data.lists, ids); save(); renderEditor(); });
+sortable(listEl, () => [listEl], "y", ([g]) => { const m = current(); m.items = byIds(m.items, g.ids); save(); render(); });
+sortable(tabsEl, () => [tabsEl], "x", ([g]) => { data.lists = byIds(data.lists, g.ids); save(); render(); });
+sortable($("catList"), () => [$("catList")], "y", ([g]) => { data.lists = byIds(data.lists, g.ids); save(); renderEditor(); });
+// матрица: перенос между квадратами меняет «срочность/важность» пункта
+const matrixEl = $("matrixView");
+sortable(matrixEl, () => [...matrixEl.querySelectorAll(".qlist")], "y", groups => {
+  const m = current();
+  const byId = new Map(m.items.map(i => [i.id, i]));
+  const order = [];
+  groups.forEach(g => g.ids.forEach(id => {
+    const it = byId.get(id); if (!it) return;
+    const q = +g.key;
+    if (QUADS[q]) it.q = q; else delete it.q;
+    order.push(it);
+  }));
+  m.items.forEach(i => { if (!order.includes(i)) order.push(i); });
+  m.items = order;
+  save(); render();
+});
 
 /* =====================================================================
    СИНХРОНИЗАЦИЯ: Supabase + сквозное шифрование
@@ -1276,6 +1602,25 @@ function renderSync() {
 
 window.addEventListener("online", () => Sync.syncNow());
 document.addEventListener("visibilitychange", () => { if (!document.hidden) Sync.syncNow(); });
+
+/* ---------- Кровавая луна ---------- */
+const THEME_KEY = "checklist-theme";
+function setBlood(on, animate) {
+  document.body.classList.toggle("blood", on);
+  store(THEME_KEY, on ? "blood" : "pale");
+  const b = $("moonBtn");
+  b.title = on ? "Вернуть бледную луну" : "Кровавая луна";
+  b.setAttribute("aria-label", b.title);
+  b.textContent = on ? "●" : "☾";
+  document.querySelector('meta[name="theme-color"]').content = on ? "#140507" : "#0b0e15";
+  if (animate && on) {
+    const f = $("bloodFlash");
+    f.classList.remove("go"); void f.offsetWidth; f.classList.add("go");
+    if (navigator.vibrate) navigator.vibrate([20, 60, 30]);
+  }
+}
+setBlood(read(THEME_KEY) === "blood", false);
+$("moonBtn").onclick = () => setBlood(!document.body.classList.contains("blood"), true);
 
 render();
 Sync.init().catch(e => { console.warn(e); Sync.set("error", "Синхронизация недоступна"); });

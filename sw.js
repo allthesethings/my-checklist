@@ -1,6 +1,6 @@
 // Service worker: приложение открывается и без интернета.
 // При изменении файлов увеличьте VERSION, чтобы телефоны получили обновление.
-const VERSION = "v4";
+const VERSION = "v5";
 const CACHE = "checklist-" + VERSION;
 const SHELL = [
   "./",
