@@ -670,6 +670,83 @@
   form.add-form { flex-wrap: wrap; }
   form.add-form #input { flex: 1 1 55%; }
   form.add-form #person { flex: 1 1 30%; min-width: 0; }
+  form.add-form #year { flex: 0 0 76px; min-width: 0; text-align: center; }
+
+  /* ---------- Статус книги/фильма ---------- */
+  .status-dot {
+    flex: none; width: 22px; height: 22px; margin: 0 1px;
+    border-radius: 50%; border: 1.5px solid var(--soft);
+    background: none; cursor: pointer; padding: 0; position: relative;
+    transition: border-color .2s, background .2s, box-shadow .2s;
+  }
+  .status-dot:hover { border-color: var(--ink); }
+  .status-dot[data-s="now"] { border-color: #e0a64a; background: linear-gradient(90deg, #e0a64a 50%, transparent 50%); }
+  .status-dot[data-s="done"] { border-color: var(--accent); background: var(--accent); box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 55%, transparent); }
+  .status-dot[data-s="done"]::after {
+    content: ""; position: absolute; left: 7px; top: 3px; width: 5px; height: 10px;
+    border: solid var(--ink); border-width: 0 2px 2px 0; transform: rotate(45deg);
+  }
+  .chip {
+    display: inline-block; font-size: 12.5px; letter-spacing: .04em;
+    padding: 0 7px; margin-right: 6px; border-radius: 10px; line-height: 1.55;
+    border: 1px solid var(--line); color: var(--soft); vertical-align: 1px;
+  }
+  .chip[data-s="now"] { color: #f0c27a; border-color: rgba(224,166,74,.5); background: rgba(224,166,74,.1); }
+  .chip[data-s="done"] { color: var(--ink); border-color: color-mix(in srgb, var(--accent) 60%, transparent); background: color-mix(in srgb, var(--accent) 22%, transparent); }
+  li.media.done .text { text-decoration: none; color: var(--soft); }
+  li.media .text { cursor: pointer; }
+  .more {
+    flex: none; border: none; background: none; color: var(--soft);
+    font-size: 20px; line-height: 1; padding: 4px 6px; border-radius: 4px; cursor: pointer;
+    letter-spacing: 1px;
+  }
+  .more:hover, .more.on { color: var(--ink); background: rgba(255,255,255,.05); }
+
+  /* ---------- Контекстное меню книги/фильма ---------- */
+  .ctx-backdrop { position: fixed; inset: 0; z-index: 20; display: none; }
+  .ctx-backdrop.open { display: block; }
+  .ctx {
+    position: absolute; z-index: 21; width: 300px; max-width: calc(100vw - 24px);
+    padding: 14px 14px 12px;
+    background: rgba(16, 15, 20, .97);
+    border: 1px solid var(--line); border-radius: 6px;
+    box-shadow: 0 24px 60px -10px rgba(0,0,0,.95), 0 0 0 1px rgba(0,0,0,.7), inset 0 0 0 4px rgba(0,0,0,.3), inset 0 0 0 5px rgba(233,226,210,.06);
+    display: none;
+  }
+  .ctx.open { display: block; animation: ctxin .14s ease-out; }
+  @keyframes ctxin { from { opacity: 0; transform: translateY(-4px) scale(.98); } }
+  body.calm .ctx.open { animation: none; }
+  .ctx-title { font-family: "Cormorant Garamond", Georgia, serif; font-size: 21px; font-weight: 600; line-height: 1.15; margin: 0 0 10px; padding-right: 20px; word-break: break-word; }
+  .ctx-close { position: absolute; top: 8px; right: 8px; border: none; background: none; color: var(--soft); font-size: 20px; cursor: pointer; }
+  .ctx-sec { padding: 10px 0; border-top: 1px solid var(--line); }
+  .ctx-label { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--soft); font-weight: 500; margin-bottom: 7px; }
+  .ctx-status { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
+  .ctx-status button {
+    font: inherit; font-size: 14.5px; color: var(--soft); cursor: pointer;
+    background: rgba(0,0,0,.3); border: 1px solid var(--line); border-radius: 4px; padding: 7px 4px;
+  }
+  .ctx-status button:hover { color: var(--ink); }
+  .ctx-status button.on[data-s="plan"] { color: var(--ink); border-color: var(--soft); }
+  .ctx-status button.on[data-s="now"] { color: #f6d29a; border-color: #e0a64a; background: rgba(224,166,74,.14); }
+  .ctx-status button.on[data-s="done"] { color: var(--ink); border-color: var(--accent); background: color-mix(in srgb, var(--accent) 30%, transparent); }
+  .ctx .stars button { font-size: 26px; padding: 0 3px; }
+  .ctx .stars .clear-rating { font-size: 13.5px; color: var(--soft); text-shadow: none; margin-left: 8px; align-self: center; }
+  .ctx-fields { display: grid; grid-template-columns: 1fr 82px; gap: 8px; }
+  .ctx-fields label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--soft); }
+  .ctx-fields label.wide { grid-column: 1 / -1; }
+  .ctx-fields input { font: inherit; font-size: 16px; padding: 7px 9px !important; width: 100%; min-width: 0; flex: none; }
+  .ctx-fields label { min-width: 0; }
+  .ctx-actions { display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid var(--line); }
+  .ctx-actions .danger { background: none; border: none; font: inherit; color: #e0676b; cursor: pointer; padding: 4px 0; }
+  .ctx-actions .danger:hover { color: #ff8a8d; }
+  /* на телефоне меню выезжает снизу */
+  @media (max-width: 560px) {
+    .ctx-backdrop.open { background: rgba(0,0,0,.45); }
+    .ctx { position: fixed; left: 0 !important; right: 0; top: auto !important; bottom: 0; width: 100%; max-width: none;
+      border-radius: 12px 12px 0 0; padding: 16px 16px max(16px, env(safe-area-inset-bottom)); }
+    .ctx.open { animation: sheetin .2s ease-out; }
+    @keyframes sheetin { from { transform: translateY(30%); opacity: 0; } }
+  }
 
   /* ---------- Меньше анимации ---------- */
   body.calm .leaves { display: none; }
@@ -928,6 +1005,7 @@
         <form class="add-form" id="form" autocomplete="off">
           <input type="text" id="input" maxlength="200" placeholder="Добавить пункт…">
           <input type="text" id="person" maxlength="80" placeholder="Режиссёр" style="display:none">
+          <input type="text" id="year" inputmode="numeric" maxlength="4" placeholder="Год" aria-label="Год" style="display:none">
           <button class="add" type="submit" aria-label="Добавить">+</button>
         </form>
       </div>
@@ -953,6 +1031,7 @@
             <option value="rating">По оценке</option>
             <option value="person">По режиссёру</option>
             <option value="title">По названию</option>
+            <option value="year">По году</option>
           </select>
           <div class="view-toggle" id="viewToggle" role="group" aria-label="Вид">
             <button type="button" data-view="list">Список</button>
@@ -1136,7 +1215,7 @@ function takeSnap(d) {
   const m = new Map();
   d.lists.forEach(l => {
     m.set(l.id, JSON.stringify([l.name, l.color, l.view || "", l.type || ""]));
-    l.items.forEach(i => m.set(i.id, JSON.stringify([i.text, !!i.done, i.q || 0, i.rating || 0, i.person || ""])));
+    l.items.forEach(i => m.set(i.id, JSON.stringify([i.text, !!i.done, i.q || 0, i.rating || 0, i.person || "", i.status || "", i.year || 0])));
   });
   m.set("__order", d.lists.map(l => l.id + ":" + l.items.map(i => i.id).join(",")).join("|"));
   return m;
@@ -1275,6 +1354,7 @@ function render() {
   // книги и фильмы: поле автора/режиссёра и сортировка
   $("person").style.display = type.person ? "" : "none";
   $("person").placeholder = type.person ? `${type.person} (необязательно)` : "";
+  $("year").style.display = type.rating ? "" : "none";
   const sortSel = $("sortSelect");
   sortSel.style.display = type.rating ? "" : "none";
   if (type.rating) {
@@ -1292,7 +1372,7 @@ function render() {
   listEl.innerHTML = "";
   const qlists = {};
   document.querySelectorAll("#matrixView .qlist").forEach(u => { u.innerHTML = ""; qlists[u.dataset.key] = u; });
-  const shown = matrix ? meta.items.filter(visible) : sorted(meta.items.filter(visible), meta);
+  const shown = matrix ? meta.items.filter(i => visible(i, meta)) : sorted(meta.items.filter(i => visible(i, meta)), meta);
   shown.forEach(item => {
     const li = makeItem(item, meta);
     if (matrix) qlists[QUADS[item.q] ? item.q : 0].appendChild(li);
@@ -1300,9 +1380,9 @@ function render() {
   });
 
   // поиск и фильтр
-  document.querySelectorAll("#filterSeg button").forEach(b => b.classList.toggle("on", b.dataset.f === filter));
+  buildFilterSeg(meta);
   $("searchBox").classList.toggle("has", !!query);
-  const also = query ? data.lists.filter(l => l.id !== meta.id).map(l => [l, l.items.filter(visible).length]).filter(([, c]) => c) : [];
+  const also = query ? data.lists.filter(l => l.id !== meta.id).map(l => [l, l.items.filter(i => visible(i, l)).length]).filter(([, c]) => c) : [];
   $("alsoIn").style.display = also.length ? "" : "none";
   $("alsoIn").innerHTML = also.length ? "Также найдено в: " : "";
   also.forEach(([l, c], i) => {
@@ -1325,7 +1405,8 @@ function render() {
   const emptyText = !n ? "Здесь пока тихо… только туман и луна"
     : shown.length ? ""
     : query ? `Ничего не найдено по «${query}»`
-    : filter === "active" ? "Всё выполнено. Можно отдохнуть у фонаря"
+    : (filter === "plan" || filter === "now") && type.rating ? `Пусто в «${statusName(filter, meta)}»`
+    : filter === "active" || filter === "plan" || filter === "now" ? "Всё выполнено. Можно отдохнуть у фонаря"
     : "Пока ничего не выполнено";
   $("empty").textContent = emptyText;
   $("empty").style.display = emptyText ? "block" : "none";
@@ -1339,14 +1420,35 @@ function render() {
 
 /* ---------- Поиск и фильтр ---------- */
 const FILTER_KEY = "checklist-filter";
-let filter = ["all", "active", "done"].includes(read(FILTER_KEY)) ? read(FILTER_KEY) : "all";
+let filter = ["all", "active", "done", "plan", "now"].includes(read(FILTER_KEY)) ? read(FILTER_KEY) : "all";
 let query = "";
 const norm = s => s.toLocaleLowerCase("ru").replace(/ё/g, "е");
-const visible = i => (filter === "all" || (filter === "done") === !!i.done) && (!query || norm(i.text + " " + (i.person || "")).includes(norm(query)));
-
-document.querySelectorAll("#filterSeg button").forEach(b => b.onclick = () => {
-  filter = b.dataset.f; store(FILTER_KEY, filter); render();
-});
+// у задач: все / активные / выполненные; у книг и фильмов: все / в планах / читаю(смотрю) / готово
+function visible(i, l) {
+  const media = !!T(l).rating, st = statusOf(i);
+  let f = filter;
+  if (!media && (f === "plan" || f === "now")) f = "active";
+  if (media && f === "active") f = "all";
+  const okFilter = f === "all" || (f === "done" ? st === "done" : f === "active" ? st !== "done" : st === f);
+  return okFilter && (!query || norm(`${i.text} ${i.person || ""} ${i.year || ""}`).includes(norm(query)));
+}
+function buildFilterSeg(l) {
+  const media = !!T(l).rating;
+  const opts = media
+    ? [["all", "Все"], ["plan", statusName("plan", l)], ["now", statusName("now", l)], ["done", statusName("done", l)]]
+    : [["all", "Все"], ["active", "Активные"], ["done", "Выполненные"]];
+  const cur = !media && (filter === "plan" || filter === "now") ? "active" : media && filter === "active" ? "all" : filter;
+  const seg = $("filterSeg");
+  seg.innerHTML = "";
+  opts.forEach(([f, label]) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.dataset.f = f; b.textContent = label;
+    b.className = f === cur ? "on" : "";
+    b.setAttribute("aria-pressed", f === cur);
+    b.onclick = () => { filter = f; store(FILTER_KEY, filter); render(); };
+    seg.append(b);
+  });
+}
 $("search").oninput = () => { query = $("search").value.trim(); render(); };
 $("search").onkeydown = e => { if (e.key === "Escape") { $("search").value = ""; query = ""; render(); $("search").blur(); } };
 $("clearSearch").onclick = e => { e.preventDefault(); $("search").value = ""; query = ""; render(); $("search").focus(); };
@@ -1395,6 +1497,7 @@ function sorted(items, l) {
   const arr = [...items];
   if (s === "rating") arr.sort((a, b) => (b.rating || 0) - (a.rating || 0) || coll.compare(a.text, b.text));
   if (s === "title") arr.sort((a, b) => coll.compare(a.text, b.text));
+  if (s === "year") arr.sort((a, b) => (!a.year - !b.year) || (a.year - b.year) || coll.compare(a.text, b.text));   // без года — в конец
   if (s === "person") arr.sort((a, b) => {
     const pa = (a.person || "").trim(), pb = (b.person || "").trim();
     if (!pa !== !pb) return pa ? -1 : 1;           // без автора/режиссёра — в конец
@@ -1413,6 +1516,7 @@ $("sortSelect").onchange = () => {
 let justAdded = null, lastAddAt = 0;
 function makeItem(item, meta) {
   const type = T(meta);
+  if (type.rating) return makeMediaItem(item, meta);   // книги и фильмы — своя строка со статусом и меню
   const li = document.createElement("li");
   li.className = "item" + (item.done ? " done" : "");
   if (justAdded && justAdded.id === item.id) li.classList.add("new", ...(justAdded.quick ? ["quick"] : []));
@@ -1504,6 +1608,224 @@ function makeItem(item, meta) {
   li.append(...parts, edit, del);
   return li;
 }
+/* ---------- Книги и фильмы: статусы ---------- */
+const STATUS_ORDER = ["plan", "now", "done"];
+const statusOf = i => STATUS_ORDER.includes(i.status) ? i.status : (i.done ? "done" : "plan");
+const statusName = (s, l) => {
+  const books = typeOf(l) === "books";
+  return { plan: "В планах", now: books ? "Читаю" : "Смотрю", done: books ? "Прочитано" : "Просмотрено" }[s];
+};
+function setStatus(item, s, l) {
+  item.status = s;
+  item.done = s === "done";        // «готово» = выполнено: работают счётчики, прогресс и «Убрать выполненные»
+  save(`Статус: ${statusName(s, l).toLowerCase()}`);
+}
+
+function makeMediaItem(item, meta) {
+  const st = statusOf(item);
+  const li = document.createElement("li");
+  li.className = "item media" + (st === "done" ? " done" : "");
+  if (justAdded && justAdded.id === item.id) li.classList.add("new", ...(justAdded.quick ? ["quick"] : []));
+  li.dataset.id = item.id;
+
+  const grip = document.createElement("span");
+  grip.className = "grip";
+  grip.textContent = "⋮⋮";
+  grip.title = "Перетащить";
+
+  // кружок статуса: нажатие переключает по кругу «в планах → читаю → прочитано»
+  const dot = document.createElement("button");
+  dot.type = "button";
+  dot.className = "status-dot";
+  dot.dataset.s = st;
+  const next = STATUS_ORDER[(STATUS_ORDER.indexOf(st) + 1) % 3];
+  dot.title = `${statusName(st, meta)} → ${statusName(next, meta)}`;
+  dot.setAttribute("aria-label", `Статус: ${statusName(st, meta)}. Нажмите, чтобы сменить на «${statusName(next, meta)}»`);
+  dot.onclick = () => { setStatus(item, next, meta); render(); };
+
+  const body = document.createElement("div");
+  body.className = "ibody";
+  const title = document.createElement("span");
+  title.className = "text";
+  fillText(title, item.text);
+  title.onclick = () => openCtx(item, meta, li);
+  const sub = document.createElement("span");
+  sub.className = "sub";
+  const chip = document.createElement("span");
+  chip.className = "chip";
+  chip.dataset.s = st;
+  chip.textContent = statusName(st, meta);
+  sub.append(chip);
+  const bits = [];
+  if (item.person) bits.push((T(meta).personShort || "") + item.person);
+  if (item.year) bits.push(String(item.year));
+  const rest = document.createElement("span");
+  fillText(rest, bits.join(" · "));
+  sub.append(rest);
+  sub.onclick = () => openCtx(item, meta, li);
+  body.append(title, sub);
+
+  const stars = document.createElement("div");
+  stars.className = "stars";
+  stars.setAttribute("aria-label", item.rating ? `Оценка ${item.rating} из 5` : "Без оценки");
+  for (let n = 1; n <= 5; n++) {
+    const s = document.createElement("button");
+    s.type = "button";
+    s.textContent = "★";
+    s.className = n <= (item.rating || 0) ? "on" : "";
+    s.title = `Оценка ${n} из 5`;
+    s.setAttribute("aria-label", s.title);
+    s.onclick = () => { item.rating = item.rating === n ? 0 : n; save(item.rating ? `Оценка ${n}` : "Оценка снята"); render(); };
+    stars.append(s);
+  }
+
+  const more = document.createElement("button");
+  more.type = "button";
+  more.className = "more";
+  more.textContent = "⋯";
+  more.title = "Подробнее";
+  more.setAttribute("aria-label", "Меню");
+  more.setAttribute("aria-haspopup", "dialog");
+  more.onclick = () => openCtx(item, meta, li);
+
+  // правый клик — то же меню, у курсора
+  li.addEventListener("contextmenu", e => {
+    if (e.target.closest("input")) return;
+    e.preventDefault();
+    openCtx(item, meta, li, { x: e.pageX, y: e.pageY });
+  });
+
+  li.append(grip, dot, body, stars, more);
+  return li;
+}
+
+/* ---------- Контекстное меню книги/фильма ---------- */
+const ctx = document.createElement("div");
+ctx.className = "ctx";
+ctx.setAttribute("role", "dialog");
+const ctxBack = document.createElement("div");
+ctxBack.className = "ctx-backdrop";
+document.body.append(ctxBack, ctx);
+let ctxState = null;
+
+function openCtx(item, meta, li, at) {
+  closeCtx();
+  editingItem = true;                   // пока меню открыто, правки с других устройств ждут
+  ctxState = { item, meta, li };
+  li.querySelector(".more")?.classList.add("on");
+  const t = T(meta);
+  ctx.setAttribute("aria-label", item.text);
+  ctx.innerHTML = `
+    <button class="ctx-close" type="button" aria-label="Закрыть">×</button>
+    <div class="ctx-title"></div>
+    <div class="ctx-sec"><div class="ctx-label">Статус</div><div class="ctx-status"></div></div>
+    <div class="ctx-sec"><div class="ctx-label">Оценка</div><div class="stars"></div></div>
+    <div class="ctx-sec ctx-fields">
+      <label class="wide">Название<input type="text" data-f="text" maxlength="200"></label>
+      <label>${t.person}<input type="text" data-f="person" maxlength="80"></label>
+      <label>Год<input type="text" data-f="year" inputmode="numeric" maxlength="4"></label>
+    </div>
+    <div class="ctx-actions">
+      <button type="button" class="danger">Удалить</button>
+      <button type="button" class="btn ctx-done">Готово</button>
+    </div>`;
+  ctx.querySelector(".ctx-title").textContent = item.text;
+  fillCtx();
+
+  // поля: сохраняем при уходе из поля или по Enter
+  ctx.querySelectorAll(".ctx-fields input").forEach(inp => {
+    const f = inp.dataset.f;
+    inp.value = item[f] || "";
+    inp.onchange = () => {
+      const v = inp.value.trim();
+      if (f === "text") { if (!v) { inp.value = item.text; return; } item.text = v; ctx.querySelector(".ctx-title").textContent = v; }
+      if (f === "person") { if (v) item.person = v; else delete item.person; }
+      if (f === "year") {
+        const y = parseInt(v, 10);
+        if (v && !(y >= 1000 && y <= 2100)) { inp.value = item.year || ""; return; }
+        if (y) item.year = y; else delete item.year;
+      }
+      save("Изменён пункт");
+      render(); relink();
+    };
+    inp.onkeydown = e => { if (e.key === "Enter") { e.preventDefault(); inp.blur(); closeCtx(); } };
+  });
+  ctx.querySelector(".ctx-close").onclick = closeCtx;
+  ctx.querySelector(".ctx-done").onclick = closeCtx;
+  ctx.querySelector(".danger").onclick = () => {
+    meta.items = meta.items.filter(i => i.id !== item.id);
+    closeCtx();
+    save(`Удалено «${short(item.text)}»`, { toast: true });
+    render();
+  };
+
+  ctx.classList.add("open");
+  ctxBack.classList.add("open");
+  // позиция: у курсора или под строкой; не вылезаем за край экрана
+  if (innerWidth > 560) {
+    const r = li.getBoundingClientRect();
+    const w = ctx.offsetWidth, h = ctx.offsetHeight;
+    let x = at ? at.x : r.right + scrollX - w;
+    let y = at ? at.y : r.bottom + scrollY + 4;
+    x = Math.max(scrollX + 12, Math.min(x, scrollX + innerWidth - w - 12));
+    if (y + h > scrollY + innerHeight - 12) y = Math.max(scrollY + 12, (at ? at.y : r.top + scrollY) - h - 4);
+    ctx.style.left = x + "px";
+    ctx.style.top = y + "px";
+  }
+  ctx.querySelector(".ctx-status button.on")?.focus();
+}
+
+// статус и звёзды внутри меню
+function fillCtx() {
+  const { item, meta } = ctxState;
+  const box = ctx.querySelector(".ctx-status");
+  box.innerHTML = "";
+  STATUS_ORDER.forEach(s => {
+    const b = document.createElement("button");
+    b.type = "button"; b.dataset.s = s;
+    b.textContent = statusName(s, meta);
+    b.className = statusOf(item) === s ? "on" : "";
+    b.setAttribute("aria-pressed", statusOf(item) === s);
+    b.onclick = () => { if (statusOf(item) !== s) { setStatus(item, s, meta); render(); relink(); } fillCtx(); };
+    box.append(b);
+  });
+  const stars = ctx.querySelector(".stars");
+  stars.innerHTML = "";
+  for (let n = 1; n <= 5; n++) {
+    const b = document.createElement("button");
+    b.type = "button"; b.textContent = "★";
+    b.className = n <= (item.rating || 0) ? "on" : "";
+    b.setAttribute("aria-label", `Оценка ${n} из 5`);
+    b.onclick = () => { item.rating = n; save(`Оценка ${n}`); render(); relink(); fillCtx(); };
+    stars.append(b);
+  }
+  if (item.rating) {
+    const c = document.createElement("button");
+    c.type = "button"; c.className = "clear-rating"; c.textContent = "снять";
+    c.onclick = () => { item.rating = 0; save("Оценка снята"); render(); relink(); fillCtx(); };
+    stars.append(c);
+  }
+}
+// после перерисовки списка строка — новый элемент; держим подсветку ⋯ на нём
+function relink() {
+  if (!ctxState) return;
+  const li = document.querySelector(`li.item[data-id="${CSS.escape(ctxState.item.id)}"]`);
+  if (li) { ctxState.li = li; li.querySelector(".more")?.classList.add("on"); }
+}
+function closeCtx() {
+  if (!ctxState) return;
+  const active = document.activeElement;
+  if (active && ctx.contains(active) && active.matches("input")) active.blur();   // сохранить поле
+  ctxState.li.querySelector(".more")?.classList.remove("on");
+  ctxState = null;
+  ctx.classList.remove("open");
+  ctxBack.classList.remove("open");
+  editingItem = false;
+  Sync.flushPending();
+}
+ctxBack.addEventListener("pointerdown", closeCtx);
+document.addEventListener("keydown", e => { if (e.key === "Escape" && ctxState) closeCtx(); });
+
 const short = s => s.length > 28 ? s.slice(0, 27) + "…" : s;
 
 /* ---------- Редактирование пункта ---------- */
@@ -1560,11 +1882,16 @@ $("form").onsubmit = e => {
   if (addTarget && viewOf(meta) === "matrix") item.q = addTarget;
   const person = $("person").value.trim();
   if (T(meta).person && person) item.person = person;
+  if (T(meta).rating) {
+    item.status = "plan";
+    const y = parseInt($("year").value, 10);
+    if (y >= 1000 && y <= 2100) item.year = y;
+  }
   meta.items.push(item);
   const now = Date.now();
   justAdded = { id: item.id, quick: now - lastAddAt < 1500 };   // добавляете подряд — анимация почти незаметна
   lastAddAt = now;
-  input.value = ""; $("person").value = "";
+  input.value = ""; $("person").value = ""; $("year").value = "";
   input.focus();
   save("Добавлено"); render();
 };
@@ -1676,7 +2003,7 @@ function renderEditor() {
    • за сам пункт/вкладку: мышью — просто тянуть, пальцем — удержать ~0,3 с и тянуть;
    • можно переносить между несколькими контейнерами (квадраты матрицы). */
 function sortable(root, getContainers, axis, onEnd) {
-  const EXCLUDE = "input, button.del, button.edit, .swatch, .check";
+  const EXCLUDE = "input, button.del, button.edit, .swatch, .check, .status-dot, .more, .stars";
   let state = null;
 
   root.addEventListener("pointerdown", e => {
@@ -2200,6 +2527,9 @@ function sanitizeLists(arr) {
           if ([1, 2, 3, 4].includes(i.q)) it.q = i.q;
           if ([1, 2, 3, 4, 5].includes(i.rating)) it.rating = i.rating;
           const p = str(i.person, 80).trim(); if (p) it.person = p;
+          if (["plan", "now", "done"].includes(i.status)) it.status = i.status;
+          const y = parseInt(i.year, 10); if (y >= 1000 && y <= 2100) it.year = y;
+          if (it.status) it.done = it.status === "done";
           return it;
         }),
     };
