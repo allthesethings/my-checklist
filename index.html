@@ -1,0 +1,935 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Мои списки</title>
+<meta name="theme-color" content="#0b0e15">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Списки">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=EB+Garamond:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --night: #0b0e15;
+    --ink: #e9e2d2;
+    --muted: #8d8676;
+    --card: rgba(12, 14, 20, 0.72);
+    --line: rgba(233, 226, 210, 0.12);
+    --blood: #9b2226;
+    --accent: #9b2226;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; }
+  body {
+    background: var(--night);
+    color: var(--ink);
+    font-family: "EB Garamond", Georgia, serif;
+    font-size: 17px;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: max(56px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(40px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* ---------- Перетаскивание ---------- */
+  .grip {
+    flex: none;
+    width: 14px;
+    align-self: stretch;
+    display: grid;
+    place-items: center;
+    color: var(--muted);
+    cursor: grab;
+    touch-action: none;
+    opacity: 0;
+    transition: opacity .2s, color .2s;
+    font-size: 13px;
+    letter-spacing: -2px;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  li:hover > .grip, .cat-row .grip { opacity: .7; }
+  .grip:hover { color: var(--ink); opacity: 1; }
+  @media (hover: none) { .grip { opacity: .45; } }
+  [data-id] { -webkit-touch-callout: none; }
+  .tab, li.item { user-select: none; -webkit-user-select: none; }
+  .pressing { transform: scale(.98); transition: transform .15s; }
+  .dragging {
+    position: relative;
+    z-index: 5;
+    background: rgba(233, 226, 210, .07) !important;
+    box-shadow: 0 10px 30px -8px rgba(0,0,0,.8), 0 0 0 1px color-mix(in srgb, var(--accent) 50%, transparent);
+    border-radius: 4px;
+  }
+  .sorting, .sorting * { cursor: grabbing !important; }
+
+  /* ---------- Фон ---------- */
+  .art { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+  .fog { animation: drift 40s ease-in-out infinite alternate; }
+  .fog.slow { animation-duration: 60s; animation-direction: alternate-reverse; }
+  @keyframes drift { from { transform: translateX(-60px); } to { transform: translateX(60px); } }
+  .flicker { animation: flicker 3.5s ease-in-out infinite; }
+  @keyframes flicker { 0%,100% { opacity: .9; } 45% { opacity: .65; } 60% { opacity: 1; } }
+
+  .leaves { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+  .leaf {
+    position: absolute;
+    top: -30px;
+    width: 12px; height: 12px;
+    border-radius: 0 100% 0 100%;
+    opacity: .85;
+    animation: fall linear infinite;
+  }
+  @keyframes fall {
+    0%   { transform: translate(0, 0) rotate(0deg); }
+    25%  { transform: translate(calc(var(--dx) * .5), 26vh) rotate(140deg); }
+    50%  { transform: translate(calc(var(--dx) * -.3), 52vh) rotate(260deg); }
+    75%  { transform: translate(var(--dx), 78vh) rotate(380deg); }
+    100% { transform: translate(calc(var(--dx) * .2), 108vh) rotate(520deg); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .fog, .flicker, .leaf { animation: none; }
+    .leaves { display: none; }
+  }
+
+  /* ---------- Карточка ---------- */
+  .app {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 500px;
+    background: var(--card);
+    backdrop-filter: blur(8px) saturate(110%);
+    -webkit-backdrop-filter: blur(8px) saturate(110%);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 34px 30px 24px;
+    box-shadow: 0 30px 80px -20px rgba(0,0,0,.8), inset 0 1px 0 rgba(255,255,255,.04);
+    align-self: flex-start;
+  }
+  .app::before, .app::after {
+    /* тонкие уголки-орнамент */
+    content: "";
+    position: absolute;
+    width: 22px; height: 22px;
+    border: 1px solid rgba(233,226,210,.35);
+  }
+  .app::before { top: 8px; left: 8px; border-right: 0; border-bottom: 0; }
+  .app::after  { bottom: 8px; right: 8px; border-left: 0; border-top: 0; }
+
+  header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  h1 {
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-weight: 500;
+    font-size: 44px;
+    line-height: 1;
+    margin: 0 0 6px;
+    letter-spacing: .01em;
+  }
+  h1 em { color: var(--accent); transition: color .4s; }
+  .date { color: var(--muted); font-size: 15px; font-style: italic; margin-bottom: 22px; }
+  .date b { font-weight: 500; color: var(--ink); font-style: normal; letter-spacing: .05em; }
+
+  .icon-btn {
+    background: none;
+    border: 1px solid var(--line);
+    color: var(--muted);
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 16px;
+    display: grid; place-items: center;
+    transition: color .2s, border-color .2s;
+    flex: none;
+  }
+  .icon-btn:hover, .icon-btn.on { color: var(--ink); border-color: var(--accent); }
+
+  .tabs {
+    display: flex;
+    gap: 2px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 20px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    flex: 1 0 auto;
+    background: none;
+    border: none;
+    padding: 10px 12px 12px;
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-size: 19px;
+    color: var(--muted);
+    cursor: pointer;
+    position: relative;
+    transition: color .2s;
+    white-space: nowrap;
+  }
+  .tab:hover { color: var(--ink); }
+  .tab.active { color: var(--ink); font-weight: 600; }
+  .tab::after {
+    content: "";
+    position: absolute;
+    left: 18%; right: 18%; bottom: -1px;
+    height: 2px;
+    background: var(--c);
+    transform: scaleX(0);
+    transition: transform .25s;
+  }
+  .tab.active::after { transform: scaleX(1); }
+  .tab .count { font-family: "EB Garamond", serif; font-size: 12px; color: var(--muted); margin-left: 4px; font-weight: 400; }
+
+  form.add-form { display: flex; gap: 8px; margin-bottom: 14px; }
+  input[type="text"] {
+    flex: 1;
+    min-width: 0;
+    font: inherit;
+    padding: 11px 14px;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: rgba(0,0,0,.35);
+    color: var(--ink);
+    outline: none;
+    transition: border-color .2s, box-shadow .2s;
+  }
+  input[type="text"]::placeholder { color: #6f695d; font-style: italic; }
+  input[type="text"]:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+  }
+  .add {
+    width: 46px;
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--accent) 35%, transparent);
+    color: var(--ink);
+    font-size: 22px;
+    cursor: pointer;
+    transition: background .2s, transform .1s;
+  }
+  .add:hover { background: var(--accent); }
+  .add:active { transform: scale(.95); }
+
+  ul { list-style: none; padding: 0; margin: 0; }
+  li.item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 4px;
+    border-bottom: 1px solid var(--line);
+    animation: appear .3s ease;
+  }
+  li.item:last-child { border-bottom: none; }
+  @keyframes appear { from { opacity: 0; transform: translateY(-4px); } }
+
+  .check {
+    appearance: none; -webkit-appearance: none;
+    flex: none;
+    width: 18px; height: 18px;
+    border: 1.5px solid var(--muted);
+    transform: rotate(45deg);
+    cursor: pointer;
+    display: grid; place-items: center;
+    transition: all .2s;
+    margin: 0 3px;
+  }
+  .check:hover { border-color: var(--accent); }
+  .check:checked { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 60%, transparent); }
+  .check:checked::after {
+    content: "";
+    width: 4px; height: 4px;
+    background: var(--ink);
+  }
+  .text { flex: 1; word-break: break-word; cursor: pointer; transition: color .2s; }
+  li.done .text { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--accent); }
+
+  .del {
+    border: none; background: none; color: var(--muted);
+    font-size: 20px; line-height: 1; cursor: pointer;
+    padding: 4px 6px; border-radius: 4px;
+    opacity: 0; transition: opacity .2s, color .2s;
+  }
+  li.item:hover .del, .del:focus-visible { opacity: 1; }
+  .del:hover { color: #d8484d; }
+  @media (hover: none) { .del { opacity: .6; } }
+
+  .empty {
+    text-align: center;
+    color: var(--muted);
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-style: italic;
+    font-size: 20px;
+    padding: 26px 0 18px;
+  }
+
+  .footer { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; font-size: 14px; color: var(--muted); }
+  .progress { flex: 1; height: 2px; background: var(--line); margin: 0 12px; overflow: hidden; }
+  .progress span { display: block; height: 100%; background: var(--accent); transition: width .35s; box-shadow: 0 0 8px var(--accent); }
+  .link-btn { background: none; border: none; font: inherit; color: var(--muted); cursor: pointer; padding: 0; }
+  .link-btn:hover { color: var(--ink); }
+  .link-btn:disabled { visibility: hidden; }
+
+  /* ---------- Редактор категорий ---------- */
+  .editor { display: none; }
+  .app.editing .editor { display: block; }
+  .app.editing .main-view { display: none; }
+  .editor h2 {
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-weight: 500; font-size: 24px;
+    margin: 0 0 14px;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 10px;
+  }
+  .cat-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .swatch {
+    flex: none;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    border: 2px solid rgba(233,226,210,.25);
+    cursor: pointer;
+    transition: transform .15s;
+  }
+  .swatch:hover { transform: scale(1.12); }
+  .cat-row .meta { font-size: 13px; color: var(--muted); width: 46px; text-align: right; flex: none; }
+  .cat-row { padding: 2px 0; }
+  .cat-row .grip { width: 20px; font-size: 15px; }
+  .cat-row .del { opacity: .7; }
+  .editor-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 18px; }
+  .btn {
+    font: inherit;
+    padding: 8px 18px;
+    border-radius: 4px;
+    border: 1px solid var(--accent);
+    background: color-mix(in srgb, var(--accent) 35%, transparent);
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .btn:hover { background: var(--accent); }
+  .hint { font-size: 13px; color: var(--muted); font-style: italic; margin-top: 12px; }
+
+  @media (max-width: 480px) {
+    body { padding: 24px 16px; }
+    .app { padding: 26px 18px 18px; }
+    h1 { font-size: 36px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ========== Фоновая картина: готический город под полной луной ========== -->
+<svg class="art" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#07090f"/>
+      <stop offset=".45" stop-color="#1b2232"/>
+      <stop offset=".75" stop-color="#3b4256"/>
+      <stop offset="1" stop-color="#4f4a4a"/>
+    </linearGradient>
+    <radialGradient id="moonGlow">
+      <stop offset="0" stop-color="#f4ecd6" stop-opacity=".55"/>
+      <stop offset=".35" stop-color="#cfc6ae" stop-opacity=".18"/>
+      <stop offset="1" stop-color="#cfc6ae" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="moon" cx=".42" cy=".4">
+      <stop offset="0" stop-color="#fffaf0"/>
+      <stop offset=".7" stop-color="#ece2c6"/>
+      <stop offset="1" stop-color="#d6c9a6"/>
+    </radialGradient>
+    <radialGradient id="lamp">
+      <stop offset="0" stop-color="#ffcf7a" stop-opacity=".9"/>
+      <stop offset=".3" stop-color="#e8913a" stop-opacity=".35"/>
+      <stop offset="1" stop-color="#e8913a" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="fogGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9aa2b3" stop-opacity="0"/>
+      <stop offset=".5" stop-color="#9aa2b3" stop-opacity=".28"/>
+      <stop offset="1" stop-color="#9aa2b3" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="vignette" cx=".5" cy=".45" r=".75">
+      <stop offset=".55" stop-color="#000" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000" stop-opacity=".75"/>
+    </radialGradient>
+    <filter id="blur8"><feGaussianBlur stdDeviation="8"/></filter>
+    <filter id="blur20"><feGaussianBlur stdDeviation="20"/></filter>
+    <g id="flower">
+      <ellipse cx="0" cy="-5" rx="2" ry="5"/>
+      <ellipse cx="0" cy="-5" rx="2" ry="5" transform="rotate(72)"/>
+      <ellipse cx="0" cy="-5" rx="2" ry="5" transform="rotate(144)"/>
+      <ellipse cx="0" cy="-5" rx="2" ry="5" transform="rotate(216)"/>
+      <ellipse cx="0" cy="-5" rx="2" ry="5" transform="rotate(288)"/>
+    </g>
+  </defs>
+
+  <rect width="1440" height="900" fill="url(#sky)"/>
+
+  <!-- луна -->
+  <circle cx="1060" cy="230" r="330" fill="url(#moonGlow)"/>
+  <circle cx="1060" cy="230" r="128" fill="url(#moon)"/>
+  <g fill="#b9ad8e" opacity=".3" filter="url(#blur8)">
+    <circle cx="1020" cy="200" r="22"/><circle cx="1100" cy="270" r="30"/>
+    <circle cx="1085" cy="185" r="12"/><circle cx="1030" cy="280" r="10"/>
+  </g>
+
+  <!-- дальний город в тумане -->
+  <g fill="#2c3242" opacity=".85">
+    <rect x="300" y="500" width="60" height="200"/><polygon points="300,500 330,380 360,500"/>
+    <rect x="380" y="540" width="120" height="160"/><polygon points="380,540 440,490 500,540"/>
+    <rect x="520" y="470" width="40" height="230"/><polygon points="520,470 540,360 560,470"/>
+    <rect x="580" y="560" width="110" height="140"/>
+    <rect x="1250" y="520" width="50" height="180"/><polygon points="1250,520 1275,420 1300,520"/>
+    <rect x="1310" y="570" width="130" height="130"/><polygon points="1310,570 1375,520 1440,570"/>
+  </g>
+  <rect class="fog slow" x="-100" y="480" width="1640" height="200" fill="url(#fogGrad)"/>
+
+  <!-- собор -->
+  <g fill="#121621">
+    <rect x="700" y="540" width="130" height="160"/><polygon points="700,540 765,495 830,540"/>
+    <rect x="726" y="470" width="16" height="70"/><polygon points="726,470 734,430 742,470"/>
+    <rect x="820" y="470" width="320" height="230"/>
+    <polygon points="820,470 830,440 840,470"/><polygon points="920,470 930,438 940,470"/>
+    <polygon points="1020,470 1030,438 1040,470"/><polygon points="1120,470 1130,440 1140,470"/>
+    <rect x="860" y="420" width="40" height="280"/><polygon points="860,420 880,310 900,420"/>
+    <rect x="1060" y="430" width="40" height="270"/><polygon points="1060,430 1080,320 1100,430"/>
+    <rect x="950" y="360" width="60" height="340"/><polygon points="950,360 980,170 1010,360"/>
+    <polygon points="944,360 950,330 956,360"/><polygon points="1004,360 1010,330 1016,360"/>
+    <rect x="977" y="140" width="6" height="40"/><rect x="968" y="152" width="24" height="5"/>
+    <rect x="1130" y="520" width="120" height="180"/><polygon points="1130,520 1190,468 1250,520"/>
+  </g>
+  <!-- окна -->
+  <g fill="#e8a24a" class="flicker">
+    <circle cx="980" cy="420" r="12" opacity=".75"/>
+    <rect x="874" y="470" width="10" height="26" rx="5" opacity=".8"/>
+    <rect x="1074" y="480" width="10" height="26" rx="5" opacity=".6"/>
+    <rect x="760" y="580" width="9" height="22" rx="4.5" opacity=".7"/>
+    <rect x="1180" y="560" width="9" height="22" rx="4.5" opacity=".75"/>
+    <rect x="1205" y="560" width="9" height="22" rx="4.5" opacity=".5"/>
+    <rect x="930" y="530" width="8" height="24" rx="4" opacity=".55"/>
+    <rect x="1022" y="530" width="8" height="24" rx="4" opacity=".7"/>
+  </g>
+  <g class="flicker">
+    <circle cx="980" cy="420" r="40" fill="url(#lamp)" opacity=".5"/>
+    <circle cx="1190" cy="570" r="40" fill="url(#lamp)" opacity=".4"/>
+  </g>
+
+  <!-- туман у подножия -->
+  <ellipse class="fog" cx="900" cy="690" rx="700" ry="60" fill="#8a91a0" opacity=".22" filter="url(#blur20)"/>
+
+  <!-- земля -->
+  <path d="M0 700 C 260 668, 560 690, 880 676 S 1280 684, 1440 694 V900 H0 Z" fill="#11141c"/>
+  <g id="fence" stroke="#0a0c12" stroke-width="3" fill="#0a0c12"></g>
+  <g fill="#0b0e14">
+    <rect x="140" y="660" width="8" height="50"/><rect x="128" y="672" width="32" height="7"/>
+    <rect x="215" y="676" width="7" height="38"/><rect x="205" y="686" width="27" height="6"/>
+    <path d="M560 715 v-30 a18 18 0 0 1 36 0 v30 z"/>
+    <rect x="1290" y="668" width="7" height="44"/><rect x="1279" y="680" width="29" height="6"/>
+  </g>
+
+  <!-- фонарь -->
+  <g>
+    <rect x="356" y="560" width="6" height="160" fill="#0a0c12"/>
+    <rect x="346" y="548" width="26" height="16" fill="#0a0c12"/>
+    <polygon points="349,548 359,532 369,548" fill="#0a0c12"/>
+    <rect x="351" y="550" width="16" height="12" fill="#ffc46b" class="flicker"/>
+    <circle cx="359" cy="556" r="110" fill="url(#lamp)" class="flicker"/>
+  </g>
+
+  <!-- дерево слева -->
+  <g stroke="#07090d" stroke-linecap="round" fill="none">
+    <path d="M110 900 C 120 780, 95 700, 130 600 C 150 540, 120 470, 150 400" stroke-width="30"/>
+    <path d="M128 610 C 190 560, 230 560, 290 500 C 320 470, 330 430, 380 410" stroke-width="12"/>
+    <path d="M140 470 C 90 420, 60 380, 20 360" stroke-width="10"/>
+    <path d="M150 400 C 170 330, 210 300, 220 240 C 228 200, 260 170, 300 160" stroke-width="9"/>
+    <path d="M150 400 C 120 340, 80 310, 60 250" stroke-width="7"/>
+    <path d="M290 500 C 310 520, 340 520, 360 540" stroke-width="5"/>
+    <path d="M220 240 C 190 200, 180 160, 150 140" stroke-width="5"/>
+    <path d="M60 250 C 40 220, 10 210, -10 190" stroke-width="4"/>
+    <path d="M300 160 C 330 150, 350 120, 380 115" stroke-width="3"/>
+    <path d="M380 410 C 410 405, 430 380, 460 378" stroke-width="3"/>
+    <path d="M20 360 C 0 340, -10 330, -20 320" stroke-width="4"/>
+    <path d="M250 520 C 260 480, 290 470, 300 440" stroke-width="3"/>
+    <path d="M200 280 C 240 270, 260 250, 280 255" stroke-width="2.5"/>
+  </g>
+  <!-- последняя осенняя листва на ветвях -->
+  <g id="crown"></g>
+
+  <!-- дерево справа (тоньше, на фоне луны) -->
+  <g stroke="#0b0e14" stroke-linecap="round" fill="none">
+    <path d="M1360 700 C 1350 620, 1370 560, 1350 480 C 1340 430, 1360 380, 1345 330" stroke-width="12"/>
+    <path d="M1352 500 C 1300 470, 1270 440, 1240 400" stroke-width="5"/>
+    <path d="M1348 420 C 1390 390, 1410 360, 1440 350" stroke-width="5"/>
+    <path d="M1345 330 C 1320 290, 1300 270, 1270 260" stroke-width="3"/>
+    <path d="M1240 400 C 1220 380, 1200 375, 1180 360" stroke-width="2.5"/>
+  </g>
+
+  <!-- передний план -->
+  <path d="M0 790 C 300 750, 620 772, 900 800 S 1250 820, 1440 780 V900 H0 Z" fill="#07090d"/>
+  <g id="flowers"></g>
+
+  <rect class="fog slow" x="-100" y="760" width="1640" height="160" fill="url(#fogGrad)" opacity=".7"/>
+  <rect width="1440" height="900" fill="url(#vignette)"/>
+</svg>
+<div class="leaves" id="leaves" aria-hidden="true"></div>
+
+<!-- ========== Приложение ========== -->
+<main class="app" id="app">
+  <header>
+    <div>
+      <h1>Мои <em>списки</em></h1>
+      <div class="date" id="date"></div>
+    </div>
+    <button class="icon-btn" id="editBtn" title="Редактировать категории" aria-label="Редактировать категории">✎</button>
+  </header>
+
+  <section class="main-view">
+    <nav class="tabs" id="tabs"></nav>
+    <div id="listArea">
+      <form class="add-form" id="form" autocomplete="off">
+        <input type="text" id="input" maxlength="200" placeholder="Добавить пункт…">
+        <button class="add" type="submit" aria-label="Добавить">+</button>
+      </form>
+      <ul id="list"></ul>
+      <div class="empty" id="empty"></div>
+      <div class="footer" id="footer">
+        <span id="stats"></span>
+        <div class="progress"><span id="bar"></span></div>
+        <button class="link-btn" id="clear">Убрать выполненные</button>
+      </div>
+    </div>
+    <div class="empty" id="noLists" style="display:none">
+      Категорий пока нет.<br>
+      <button class="link-btn" id="noListsAdd" style="margin-top:10px;font-size:16px;text-decoration:underline">Создать первую</button>
+    </div>
+  </section>
+
+  <section class="editor">
+    <h2>Категории</h2>
+    <ul id="catList"></ul>
+    <div class="editor-actions">
+      <button class="link-btn" id="addCat">+ Новая категория</button>
+      <button class="btn" id="doneEdit">Готово</button>
+    </div>
+    <div class="hint">Кружок меняет цвет. Тяните за ⋮⋮, чтобы поменять порядок, — или перетаскивайте прямо вкладки.</div>
+  </section>
+</main>
+
+<script>
+/* ---------- Данные ---------- */
+const COLORS = ["#9b2226", "#c8782f", "#b9a77a", "#5f7a5a", "#4f6688", "#7a4f86", "#8a8a8a"];
+const KEY = "checklist-data-v2";
+const OLD_KEY = "checklist-data-v1";
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+
+function store(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+function read(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+
+function defaults() {
+  return {
+    active: null,
+    lists: [
+      { id: uid(), name: "Дела",   color: COLORS[0], items: [] },
+      { id: uid(), name: "Книги",  color: COLORS[1], items: [] },
+      { id: uid(), name: "Фильмы", color: COLORS[3], items: [] },
+    ],
+  };
+}
+
+function load() {
+  try {
+    const d = JSON.parse(read(KEY));
+    if (d && Array.isArray(d.lists)) return d;
+  } catch (e) {}
+  // перенос данных из первой версии
+  const fresh = defaults();
+  try {
+    const old = JSON.parse(read(OLD_KEY));
+    if (old) {
+      ["todo", "books", "movies"].forEach((k, i) => {
+        if (Array.isArray(old[k])) fresh.lists[i].items = old[k];
+      });
+    }
+  } catch (e) {}
+  return fresh;
+}
+
+let data = load();
+let editing = false;
+const save = () => store(KEY, JSON.stringify(data));
+const current = () => data.lists.find(l => l.id === data.active) || data.lists[0];
+
+const $ = id => document.getElementById(id);
+const app = $("app"), tabsEl = $("tabs"), listEl = $("list"), input = $("input");
+
+/* ---------- Дата и время (обновляются сами) ---------- */
+function updateDate() {
+  const now = new Date();
+  const day = now.toLocaleDateString("ru-RU", { weekday: "long", day: "numeric", month: "long" });
+  const time = now.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+  $("date").innerHTML = `${day} · <b>${time}</b>`;
+}
+updateDate();
+setInterval(updateDate, 15000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) updateDate(); });
+
+/* ---------- Отрисовка списков ---------- */
+function render() {
+  const meta = current();
+  const has = !!meta;
+  if (has) data.active = meta.id;
+  document.documentElement.style.setProperty("--accent", has ? meta.color : COLORS[0]);
+
+  $("listArea").style.display = has ? "" : "none";
+  $("noLists").style.display = has ? "none" : "block";
+  tabsEl.style.display = has ? "" : "none";
+
+  tabsEl.innerHTML = "";
+  data.lists.forEach(l => {
+    const b = document.createElement("button");
+    b.className = "tab" + (l.id === data.active ? " active" : "");
+    b.dataset.id = l.id;
+    b.style.setProperty("--c", l.color);
+    const left = l.items.filter(i => !i.done).length;
+    b.textContent = l.name;
+    const c = document.createElement("span");
+    c.className = "count";
+    c.textContent = left || "";
+    b.appendChild(c);
+    b.onclick = () => { data.active = l.id; save(); render(); input.focus(); };
+    b.ondblclick = () => openEditor();
+    tabsEl.appendChild(b);
+  });
+  if (!has) return;
+
+  input.placeholder = `Добавить в «${meta.name}»…`;
+  listEl.innerHTML = "";
+  meta.items.forEach(item => {
+    const li = document.createElement("li");
+    li.className = "item" + (item.done ? " done" : "");
+    li.dataset.id = item.id;
+
+    const grip = document.createElement("span");
+    grip.className = "grip";
+    grip.textContent = "⋮⋮";
+    grip.title = "Перетащить";
+
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.className = "check";
+    cb.checked = item.done;
+    cb.setAttribute("aria-label", "Выполнено");
+    cb.onchange = () => { item.done = cb.checked; save(); render(); };
+
+    const span = document.createElement("span");
+    span.className = "text";
+    span.textContent = item.text;
+    span.onclick = () => { item.done = !item.done; save(); render(); };
+
+    const del = document.createElement("button");
+    del.className = "del";
+    del.textContent = "×";
+    del.setAttribute("aria-label", "Удалить");
+    del.onclick = () => { meta.items = meta.items.filter(i => i.id !== item.id); save(); render(); };
+
+    li.append(grip, cb, span, del);
+    listEl.appendChild(li);
+  });
+
+  const n = meta.items.length, done = meta.items.filter(i => i.done).length;
+  $("empty").textContent = n ? "" : "Здесь пока тихо… только туман и луна";
+  $("empty").style.display = n ? "none" : "block";
+  $("footer").style.display = n ? "flex" : "none";
+  $("stats").textContent = `${done} из ${n}`;
+  $("bar").style.width = n ? (done / n * 100) + "%" : "0";
+  $("clear").disabled = done === 0;
+}
+
+$("form").onsubmit = e => {
+  e.preventDefault();
+  const text = input.value.trim();
+  const meta = current();
+  if (!text || !meta) return;
+  meta.items.push({ id: uid(), text, done: false });
+  input.value = "";
+  save(); render();
+};
+$("clear").onclick = () => {
+  const meta = current();
+  meta.items = meta.items.filter(i => !i.done);
+  save(); render();
+};
+
+/* ---------- Редактор категорий ---------- */
+function openEditor() { editing = true; app.classList.add("editing"); $("editBtn").classList.add("on"); renderEditor(); }
+function closeEditor() {
+  data.lists.forEach(l => { if (!l.name.trim()) l.name = "Без названия"; });
+  editing = false; app.classList.remove("editing"); $("editBtn").classList.remove("on");
+  save(); render();
+}
+$("editBtn").onclick = () => editing ? closeEditor() : openEditor();
+$("doneEdit").onclick = closeEditor;
+$("noListsAdd").onclick = () => { openEditor(); addCategory(); };
+$("addCat").onclick = addCategory;
+
+function addCategory() {
+  const used = data.lists.map(l => l.color);
+  const color = COLORS.find(c => !used.includes(c)) || COLORS[data.lists.length % COLORS.length];
+  const l = { id: uid(), name: "", color, items: [] };
+  data.lists.push(l);
+  data.active = l.id;
+  save(); renderEditor();
+  const inputs = $("catList").querySelectorAll("input");
+  inputs[inputs.length - 1].focus();
+}
+
+function renderEditor() {
+  const ul = $("catList");
+  ul.innerHTML = "";
+  data.lists.forEach((l, idx) => {
+    const li = document.createElement("li");
+    li.className = "cat-row";
+    li.dataset.id = l.id;
+
+    const move = document.createElement("span");
+    move.className = "grip";
+    move.textContent = "⋮⋮";
+    move.title = "Перетащить";
+
+    const sw = document.createElement("button");
+    sw.className = "swatch";
+    sw.style.background = l.color;
+    sw.title = "Сменить цвет";
+    sw.onclick = () => {
+      l.color = COLORS[(COLORS.indexOf(l.color) + 1) % COLORS.length];
+      sw.style.background = l.color;
+      save();
+    };
+
+    const name = document.createElement("input");
+    name.type = "text";
+    name.value = l.name;
+    name.maxLength = 30;
+    name.placeholder = "Название категории";
+    name.oninput = () => { l.name = name.value; save(); };
+    name.onkeydown = e => { if (e.key === "Enter") closeEditor(); };
+
+    const meta = document.createElement("span");
+    meta.className = "meta";
+    meta.textContent = l.items.length ? l.items.length + " шт." : "";
+
+    const del = document.createElement("button");
+    del.className = "del";
+    del.textContent = "×";
+    del.title = "Удалить категорию";
+    del.onclick = () => {
+      if (l.items.length && !confirm(`Удалить «${l.name || "Без названия"}» вместе с ${l.items.length} пунктами?`)) return;
+      data.lists = data.lists.filter(x => x.id !== l.id);
+      if (data.active === l.id) data.active = data.lists[0] ? data.lists[0].id : null;
+      save(); renderEditor();
+    };
+
+    li.append(move, sw, name, meta, del);
+    ul.appendChild(li);
+  });
+  if (!data.lists.length) {
+    const li = document.createElement("li");
+    li.className = "empty";
+    li.textContent = "Ни одной категории";
+    ul.appendChild(li);
+  }
+}
+
+/* ---------- Перетаскивание (мышь и палец) ----------
+   • за ⋮⋮ — сразу;
+   • за сам пункт/вкладку: мышью — просто тянуть, пальцем — удержать ~0,3 с и тянуть. */
+function sortable(container, axis, onEnd) {
+  const EXCLUDE = "input, button.del, .swatch, .check";
+  let state = null;
+
+  container.addEventListener("pointerdown", e => {
+    if (e.button !== 0 || state) return;
+    const el = e.target.closest("[data-id]");
+    if (!el || el.parentElement !== container) return;
+    const onGrip = !!e.target.closest(".grip");
+    if (!onGrip && e.target.closest(EXCLUDE)) return;
+    // в редакторе тянем только за ⋮⋮, чтобы не мешать вводу текста
+    if (!onGrip && container.id === "catList") return;
+
+    state = { el, id: e.pointerId, x: e.clientX, y: e.clientY, dragging: false, timer: null, touch: e.pointerType !== "mouse" };
+    if (onGrip) { e.preventDefault(); start(); }
+    else if (state.touch) {
+      el.classList.add("pressing");
+      state.timer = setTimeout(start, 280);
+    }
+    window.addEventListener("pointermove", move, { passive: false });
+    window.addEventListener("pointerup", end);
+    window.addEventListener("pointercancel", cancel);
+  });
+
+  function start() {
+    if (!state) return;
+    state.dragging = true;
+    state.el.classList.remove("pressing");
+    state.el.classList.add("dragging");
+    document.body.classList.add("sorting");
+    if (state.touch && navigator.vibrate) navigator.vibrate(12);
+  }
+
+  function move(e) {
+    if (!state || e.pointerId !== state.id) return;
+    const dx = e.clientX - state.x, dy = e.clientY - state.y;
+    if (!state.dragging) {
+      if (Math.hypot(dx, dy) < 6) return;
+      if (state.touch) return cancel();       // палец сдвинулся до удержания — это прокрутка
+      start();                                 // мышь: начали тянуть
+    }
+    e.preventDefault();
+    const pos = axis === "y" ? e.clientY : e.clientX;
+    const el = state.el;
+    const sibs = [...container.children].filter(c => c !== el && c.dataset.id);
+    let before = null;
+    for (const s of sibs) {
+      const r = s.getBoundingClientRect();
+      const mid = axis === "y" ? r.top + r.height / 2 : r.left + r.width / 2;
+      if (pos < mid) { before = s; break; }
+    }
+    if (before ? el.nextElementSibling !== before : container.lastElementChild !== el) {
+      flip(sibs, () => before ? container.insertBefore(el, before) : container.appendChild(el));
+    }
+    if (axis === "x") el.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }
+
+  // плавно сдвигаем соседей на новые места
+  function flip(els, mutate) {
+    const first = new Map(els.map(n => [n, n.getBoundingClientRect()]));
+    mutate();
+    els.forEach(n => {
+      const a = first.get(n), b = n.getBoundingClientRect();
+      const dx = a.left - b.left, dy = a.top - b.top;
+      if (!dx && !dy) return;
+      n.style.transition = "none";
+      n.style.transform = `translate(${dx}px, ${dy}px)`;
+      requestAnimationFrame(() => {
+        n.style.transition = "transform .18s ease";
+        n.style.transform = "";
+      });
+    });
+  }
+
+  function cleanup() {
+    clearTimeout(state.timer);
+    state.el.classList.remove("pressing", "dragging");
+    document.body.classList.remove("sorting");
+    window.removeEventListener("pointermove", move);
+    window.removeEventListener("pointerup", end);
+    window.removeEventListener("pointercancel", cancel);
+  }
+  function cancel() { if (!state) return; const was = state.dragging; cleanup(); state = null; if (was) commit(); }
+  function end() {
+    if (!state) return;
+    const was = state.dragging;
+    cleanup();
+    state = null;
+    if (was) {
+      // клик после перетаскивания не должен отмечать пункт / переключать вкладку
+      const stop = ev => { ev.stopPropagation(); ev.preventDefault(); };
+      container.addEventListener("click", stop, true);
+      setTimeout(() => container.removeEventListener("click", stop, true), 0);
+      commit();
+    }
+  }
+  function commit() { onEnd([...container.children].map(c => c.dataset.id).filter(Boolean)); }
+
+  // пока тянем пальцем — страница не прокручивается
+  container.addEventListener("touchmove", e => { if (state && state.dragging) e.preventDefault(); }, { passive: false });
+  container.addEventListener("contextmenu", e => { if (state) e.preventDefault(); });
+}
+
+const byIds = (arr, ids) => ids.map(id => arr.find(x => x.id === id)).filter(Boolean);
+sortable(listEl, "y", ids => { const m = current(); m.items = byIds(m.items, ids); save(); render(); });
+sortable(tabsEl, "x", ids => { data.lists = byIds(data.lists, ids); save(); render(); });
+sortable($("catList"), "y", ids => { data.lists = byIds(data.lists, ids); save(); renderEditor(); });
+
+render();
+
+/* ---------- PWA: работа без интернета ---------- */
+if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+}
+
+/* ---------- Детали картины ---------- */
+(function decorate() {
+  const NS = "http://www.w3.org/2000/svg";
+  let seed = 7;
+  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+
+  // белые цветы на переднем плане и в поле
+  const fl = document.getElementById("flowers");
+  for (let i = 0; i < 260; i++) {
+    const front = i < 150;
+    const x = rnd() * 1440;
+    const y = front ? 800 + rnd() * 100 : 705 + rnd() * 85;
+    const s = front ? 0.9 + rnd() * 1.1 : 0.4 + rnd() * 0.5;
+    const u = document.createElementNS(NS, "use");
+    u.setAttribute("href", "#flower");
+    u.setAttribute("transform", `translate(${x.toFixed(1)} ${y.toFixed(1)}) scale(${s.toFixed(2)}) rotate(${(rnd() * 72).toFixed(0)})`);
+    u.setAttribute("fill", "#e8e4d8");
+    u.setAttribute("opacity", (front ? 0.55 + rnd() * 0.4 : 0.3 + rnd() * 0.3).toFixed(2));
+    fl.appendChild(u);
+  }
+
+  // кованая ограда
+  const fence = document.getElementById("fence");
+  for (let x = 420; x <= 680; x += 14) {
+    const r = document.createElementNS(NS, "rect");
+    r.setAttribute("x", x); r.setAttribute("y", 668); r.setAttribute("width", 3); r.setAttribute("height", 46);
+    const p = document.createElementNS(NS, "polygon");
+    p.setAttribute("points", `${x - 2},668 ${x + 1.5},658 ${x + 5},668`);
+    fence.append(r, p);
+  }
+  const bar = document.createElementNS(NS, "rect");
+  bar.setAttribute("x", 418); bar.setAttribute("y", 680); bar.setAttribute("width", 268); bar.setAttribute("height", 3);
+  fence.appendChild(bar);
+
+  // остатки ржавой листвы на ветвях
+  const crown = document.getElementById("crown");
+  const pts = [[300,160],[380,115],[220,240],[150,140],[60,250],[380,410],[460,378],[290,500],[360,540],[20,360],[280,255],[300,440]];
+  const leafCol = ["#7a2e1a", "#9c4a22", "#5e2416", "#a8642e"];
+  pts.forEach(([cx, cy]) => {
+    for (let i = 0; i < 6; i++) {
+      const e = document.createElementNS(NS, "ellipse");
+      e.setAttribute("cx", (cx + (rnd() - 0.5) * 40).toFixed(1));
+      e.setAttribute("cy", (cy + (rnd() - 0.5) * 30).toFixed(1));
+      e.setAttribute("rx", 4); e.setAttribute("ry", 2.2);
+      e.setAttribute("transform", `rotate(${(rnd() * 180).toFixed(0)} ${cx} ${cy})`);
+      e.setAttribute("fill", leafCol[Math.floor(rnd() * leafCol.length)]);
+      e.setAttribute("opacity", (0.6 + rnd() * 0.4).toFixed(2));
+      crown.appendChild(e);
+    }
+  });
+
+  // падающие листья
+  const box = document.getElementById("leaves");
+  for (let i = 0; i < 22; i++) {
+    const d = document.createElement("div");
+    d.className = "leaf";
+    const size = 7 + Math.random() * 9;
+    d.style.width = d.style.height = size + "px";
+    d.style.left = Math.random() * 100 + "vw";
+    d.style.background = leafCol[i % leafCol.length];
+    d.style.setProperty("--dx", (Math.random() * 160 - 80) + "px");
+    d.style.animationDuration = (12 + Math.random() * 14) + "s";
+    d.style.animationDelay = (-Math.random() * 26) + "s";
+    box.appendChild(d);
+  }
+})();
+</script>
+</body>
+</html>
