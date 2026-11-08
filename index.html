@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Мои списки</title>
+<title>Ночные записи</title>
 <meta name="theme-color" content="#0b0e15">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" href="icons/icon-192.png">
@@ -11,15 +11,15 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Списки">
+<meta name="apple-mobile-web-app-title" content="Записи">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=EB+Garamond:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=EB+Garamond:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
     --night: #0b0e15;
-    --ink: #e9e2d2;
-    --muted: #8d8676;
-    --card: rgba(12, 14, 20, 0.72);
+    --ink: #f2ecdf;
+    --muted: #a59d8c;
+    --card: rgba(11, 13, 19, 0.8);
     --line: rgba(233, 226, 210, 0.12);
     --blood: #9b2226;
     --accent: #9b2226;
@@ -30,7 +30,12 @@
     background: var(--night);
     color: var(--ink);
     font-family: "EB Garamond", Georgia, serif;
-    font-size: 17px;
+    font-size: 17.5px;
+    line-height: 1.35;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    font-kerning: normal;
     min-height: 100vh;
     display: flex;
     justify-content: center;
@@ -236,7 +241,7 @@
     outline: none;
     transition: border-color .2s, box-shadow .2s;
   }
-  input[type="text"]::placeholder { color: #6f695d; font-style: italic; }
+  input[type="text"]::placeholder, input[type="search"]::placeholder { color: #857e70; font-style: italic; }
   input[type="text"]:focus {
     border-color: var(--accent);
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
@@ -288,18 +293,95 @@
     width: 4px; height: 4px;
     background: var(--ink);
   }
-  .text { flex: 1; word-break: break-word; cursor: pointer; transition: color .2s; }
-  li.done .text { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--accent); }
+  .text {
+    flex: 1; word-break: break-word; cursor: pointer; transition: color .2s;
+    font-weight: 500;
+    text-shadow: 0 1px 1px rgba(0,0,0,.55);   /* чётче на размытом фоне */
+  }
+  li.done .text { color: var(--muted); font-weight: 400; text-decoration: line-through; text-decoration-color: var(--accent); }
+  .text mark { background: color-mix(in srgb, var(--accent) 45%, transparent); color: inherit; border-radius: 2px; padding: 0 1px; }
 
-  .del {
+  .del, .edit {
     border: none; background: none; color: var(--muted);
     font-size: 20px; line-height: 1; cursor: pointer;
     padding: 4px 6px; border-radius: 4px;
     opacity: 0; transition: opacity .2s, color .2s;
+    flex: none;
   }
-  li.item:hover .del, .del:focus-visible { opacity: 1; }
+  .edit { font-size: 15px; padding: 4px 4px; }
+  li.item:hover .del, li.item:hover .edit, .del:focus-visible, .edit:focus-visible { opacity: 1; }
   .del:hover { color: #d8484d; }
-  @media (hover: none) { .del { opacity: .6; } }
+  .edit:hover { color: var(--ink); }
+  @media (hover: none) { .del, .edit { opacity: .6; } }
+  li.item.editing .del, li.item.editing .edit, li.item.editing .grip { display: none; }
+  input.edit-input {
+    flex: 1; min-width: 0;
+    padding: 4px 8px !important;
+    font-weight: 500;
+    border-color: var(--accent) !important;
+  }
+
+  /* ---------- Поиск и фильтр ---------- */
+  .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
+  .search-box {
+    flex: 1 1 160px; min-width: 0;
+    display: flex; align-items: center; gap: 6px;
+    padding: 0 8px 0 10px;
+    background: rgba(0,0,0,.28);
+    border: 1px solid rgba(0,0,0,.55);
+    border-radius: 4px;
+    box-shadow: inset 0 1px 0 rgba(0,0,0,.4), 0 1px 0 rgba(233,226,210,.05);
+    transition: border-color .2s;
+  }
+  .search-box:focus-within { border-color: var(--accent); }
+  .search-box .ico { color: var(--muted); font-size: 15px; }
+  .search-box input {
+    flex: 1; min-width: 0; border: none; background: none; outline: none;
+    color: var(--ink); font: inherit; font-size: 16px; padding: 7px 0;
+  }
+  .search-box input::-webkit-search-cancel-button { display: none; }
+  .search-box button { border: none; background: none; color: var(--muted); cursor: pointer; font-size: 18px; padding: 0 2px; visibility: hidden; }
+  .search-box.has button { visibility: visible; }
+  .seg {
+    display: flex; flex: none;
+    border: 1px solid rgba(0,0,0,.55); border-radius: 4px; overflow: hidden;
+    background: rgba(0,0,0,.28);
+    box-shadow: inset 0 1px 0 rgba(0,0,0,.4), 0 1px 0 rgba(233,226,210,.05);
+  }
+  .seg button {
+    border: none; background: none; color: var(--muted); cursor: pointer;
+    font: inherit; font-size: 14px; padding: 6px 10px;
+    border-left: 1px solid rgba(233,226,210,.06);
+    transition: color .2s, background .2s;
+  }
+  .seg button:first-child { border-left: none; }
+  .seg button:hover { color: var(--ink); }
+  .seg button.on { color: var(--ink); background: color-mix(in srgb, var(--accent) 30%, transparent); }
+  .also-in { font-size: 14px; color: var(--muted); margin: 8px 2px 0; }
+  .also-in button { border: none; background: none; font: inherit; color: var(--ink); text-decoration: underline; text-decoration-color: var(--accent); cursor: pointer; padding: 0 2px; }
+
+  /* ---------- Тост «Отменить» ---------- */
+  .toast {
+    position: fixed; left: 50%; bottom: max(24px, env(safe-area-inset-bottom));
+    transform: translate(-50%, 20px);
+    z-index: 10;
+    display: flex; align-items: center; gap: 14px;
+    max-width: calc(100vw - 32px);
+    padding: 10px 12px 10px 16px;
+    background: rgba(14, 12, 16, .94);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    box-shadow: 0 14px 40px -10px rgba(0,0,0,.9), inset 0 0 0 1px rgba(0,0,0,.6);
+    font-size: 16px;
+    opacity: 0; pointer-events: none;
+    transition: opacity .2s, transform .2s;
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+  .toast button {
+    border: 1px solid var(--accent); background: color-mix(in srgb, var(--accent) 30%, transparent);
+    color: var(--ink); font: inherit; font-size: 15px; padding: 4px 12px; border-radius: 4px; cursor: pointer;
+  }
+  .toast kbd { font-family: inherit; font-size: 12px; color: var(--muted); }
 
   .empty {
     text-align: center;
@@ -448,8 +530,8 @@
   body.blood .leaf { background-color: #7d0d12 !important; }
   body.blood {
     --line: rgba(214, 120, 110, 0.15);
-    --muted: #9b7f78;
-    --card: rgba(18, 8, 10, 0.74);
+    --muted: #b0958d;
+    --card: rgba(18, 8, 10, 0.8);
   }
   body.blood .app {
     border-color: rgba(150, 25, 30, .45);
@@ -717,12 +799,13 @@
 </svg>
 <div class="leaves" id="leaves" aria-hidden="true"></div>
 <div class="blood-flash" id="bloodFlash" aria-hidden="true"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"><span id="toastText"></span><button type="button" id="toastUndo">Отменить</button></div>
 
 <!-- ========== Приложение ========== -->
 <main class="app" id="app">
   <header>
     <div>
-      <h1>Мои <em>списки</em></h1>
+      <h1>Ночные <em>записи</em></h1>
       <div class="date" id="date"></div>
     </div>
     <div class="head-btns">
@@ -740,6 +823,19 @@
           <input type="text" id="input" maxlength="200" placeholder="Добавить пункт…">
           <button class="add" type="submit" aria-label="Добавить">+</button>
         </form>
+      </div>
+
+      <div class="toolbar">
+        <label class="search-box" id="searchBox">
+          <span class="ico" aria-hidden="true">⌕</span>
+          <input type="search" id="search" placeholder="Поиск" autocomplete="off" aria-label="Поиск по пунктам">
+          <button type="button" id="clearSearch" aria-label="Очистить поиск">×</button>
+        </label>
+        <div class="seg" id="filterSeg" role="group" aria-label="Фильтр">
+          <button type="button" data-f="all">Все</button>
+          <button type="button" data-f="active">Активные</button>
+          <button type="button" data-f="done">Выполненные</button>
+        </div>
       </div>
 
       <div class="zone-label">
@@ -785,6 +881,8 @@
         </div>
       </div>
 
+      <div class="also-in" id="alsoIn" style="display:none"></div>
+
       <div class="footer" id="footer">
         <span id="stats"></span>
         <div class="progress"><span id="bar"></span></div>
@@ -804,7 +902,7 @@
       <button class="link-btn" id="addCat">+ Новая категория</button>
       <button class="btn" id="doneEdit">Готово</button>
     </div>
-    <div class="hint">Кружок меняет цвет. Тяните за ⋮⋮, чтобы поменять порядок, — или перетаскивайте прямо вкладки.</div>
+    <div class="hint">Кружок меняет цвет. Тяните за ⋮⋮, чтобы поменять порядок, — или перетаскивайте прямо вкладки. Удалили лишнее — Ctrl+Z или «Отменить» внизу.</div>
   </section>
 
   <section class="sync-view">
@@ -873,7 +971,13 @@ function takeSnap(d) {
 }
 let snap = takeSnap(data);
 
-function save() {
+/* ---------- Отмена / повтор ----------
+   Перед каждым изменением запоминаем прошлое состояние списков.
+   Быстрые однотипные правки (набор названия) склеиваются в одну. */
+const undoStack = [], redoStack = [];
+let savedLists = JSON.stringify(data.lists), lastUndoAt = 0, lastUndoLabel = "", restoring = false;
+
+function save(label = "Изменение", opts = {}) {
   const next = takeSnap(data), now = Date.now();
   let changed = snap.get("__order") !== next.get("__order");
   data.deleted = data.deleted || {};
@@ -886,10 +990,63 @@ function save() {
   }
   for (const [id, t] of Object.entries(data.deleted)) if (now - t > 60 * 864e5) delete data.deleted[id];
   if (changed) data.updatedAt = now;
+  if (changed && !restoring) {
+    const merge = label === lastUndoLabel && now - lastUndoAt < 1200 && opts.coalesce;
+    if (!merge) {
+      undoStack.push({ lists: savedLists, label });
+      if (undoStack.length > 60) undoStack.shift();
+    }
+    redoStack.length = 0;
+    lastUndoAt = now; lastUndoLabel = label;
+    if (opts.toast) showToast(label);
+  }
+  savedLists = JSON.stringify(data.lists);
   snap = next;
   store(KEY, JSON.stringify(data));
   if (changed) Sync.schedule();
 }
+
+function restore(from, to, verb) {
+  if (!from.length) return showToast(verb === "undo" ? "Нечего отменять" : "Нечего повторять", false);
+  const entry = from.pop();
+  to.push({ lists: JSON.stringify(data.lists), label: entry.label });
+  data.lists = JSON.parse(entry.lists);
+  // вернувшиеся пункты больше не считаются удалёнными
+  data.lists.forEach(l => { delete (data.deleted || {})[l.id]; l.items.forEach(i => delete (data.deleted || {})[i.id]); });
+  restoring = true; save(); restoring = false;
+  lastUndoLabel = "";
+  render(); if (editing) renderEditor();
+  const what = entry.label.charAt(0).toLowerCase() + entry.label.slice(1);
+  showToast((verb === "undo" ? "Отменено: " : "Повторено: ") + what, verb === "undo" ? "redo" : "undo");
+}
+const undo = () => restore(undoStack, redoStack, "undo");
+const redo = () => restore(redoStack, undoStack, "redo");
+
+// Тост с кнопкой «Отменить» (или «Повторить» после отмены)
+let toastTimer = null, toastAction = "undo";
+function showToast(text, action = "undo") {
+  const t = document.getElementById("toast"), b = document.getElementById("toastUndo");
+  document.getElementById("toastText").textContent = text;
+  toastAction = action;
+  b.style.display = action ? "" : "none";
+  b.textContent = action === "redo" ? "Повторить" : "Отменить";
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 5000);
+}
+document.getElementById("toastUndo").onclick = () => toastAction === "redo" ? redo() : undo();
+
+// Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y (по коду клавиши — работает и в русской раскладке).
+// В полях ввода оставляем родную отмену текста.
+document.addEventListener("keydown", e => {
+  const typing = e.target.closest && e.target.closest("input, textarea");
+  if ((e.ctrlKey || e.metaKey) && !typing) {
+    if (e.code === "KeyZ") { e.preventDefault(); e.shiftKey ? redo() : undo(); }
+    else if (e.code === "KeyY") { e.preventDefault(); redo(); }
+  }
+  // «/» — к поиску
+  if (!typing && e.key === "/" && !e.ctrlKey && !e.metaKey) { e.preventDefault(); document.getElementById("search").focus(); }
+});
 const current = () => data.lists.find(l => l.id === data.active) || data.lists[0];
 
 const $ = id => document.getElementById(id);
@@ -948,10 +1105,24 @@ function render() {
   listEl.innerHTML = "";
   const qlists = {};
   document.querySelectorAll("#matrixView .qlist").forEach(u => { u.innerHTML = ""; qlists[u.dataset.key] = u; });
-  meta.items.forEach(item => {
+  const shown = meta.items.filter(visible);
+  shown.forEach(item => {
     const li = makeItem(item, meta);
     if (matrix) qlists[QUADS[item.q] ? item.q : 0].appendChild(li);
     else listEl.appendChild(li);
+  });
+
+  // поиск и фильтр
+  document.querySelectorAll("#filterSeg button").forEach(b => b.classList.toggle("on", b.dataset.f === filter));
+  $("searchBox").classList.toggle("has", !!query);
+  const also = query ? data.lists.filter(l => l.id !== meta.id).map(l => [l, l.items.filter(visible).length]).filter(([, c]) => c) : [];
+  $("alsoIn").style.display = also.length ? "" : "none";
+  $("alsoIn").innerHTML = also.length ? "Также найдено в: " : "";
+  also.forEach(([l, c], i) => {
+    const b = document.createElement("button");
+    b.textContent = `${l.name} · ${c}`;
+    b.onclick = () => { data.active = l.id; addTarget = 0; save(); render(); };
+    $("alsoIn").append(i ? ", " : "", b);
   });
   if (matrix) {
     document.querySelectorAll(".quad").forEach(q => {
@@ -964,12 +1135,47 @@ function render() {
   justAdded = null;
 
   const n = meta.items.length, done = meta.items.filter(i => i.done).length;
-  $("empty").textContent = n ? "" : "Здесь пока тихо… только туман и луна";
-  $("empty").style.display = n ? "none" : "block";
+  const emptyText = !n ? "Здесь пока тихо… только туман и луна"
+    : shown.length ? ""
+    : query ? `Ничего не найдено по «${query}»`
+    : filter === "active" ? "Всё выполнено. Можно отдохнуть у фонаря"
+    : "Пока ничего не выполнено";
+  $("empty").textContent = emptyText;
+  $("empty").style.display = emptyText ? "block" : "none";
+  // в матрице сообщение показываем, только если пусто из‑за поиска/фильтра
+  if (matrix && emptyText && n) { $("listView").style.display = ""; listEl.innerHTML = ""; }
   $("footer").style.display = n ? "flex" : "none";
   $("stats").textContent = `${done} из ${n}`;
   $("bar").style.width = n ? (done / n * 100) + "%" : "0";
   $("clear").disabled = done === 0;
+}
+
+/* ---------- Поиск и фильтр ---------- */
+const FILTER_KEY = "checklist-filter";
+let filter = ["all", "active", "done"].includes(read(FILTER_KEY)) ? read(FILTER_KEY) : "all";
+let query = "";
+const norm = s => s.toLocaleLowerCase("ru").replace(/ё/g, "е");
+const visible = i => (filter === "all" || (filter === "done") === !!i.done) && (!query || norm(i.text).includes(norm(query)));
+
+document.querySelectorAll("#filterSeg button").forEach(b => b.onclick = () => {
+  filter = b.dataset.f; store(FILTER_KEY, filter); render();
+});
+$("search").oninput = () => { query = $("search").value.trim(); render(); };
+$("search").onkeydown = e => { if (e.key === "Escape") { $("search").value = ""; query = ""; render(); $("search").blur(); } };
+$("clearSearch").onclick = e => { e.preventDefault(); $("search").value = ""; query = ""; render(); $("search").focus(); };
+
+// подсветка найденного (только текстовые узлы — без HTML-вставок)
+function fillText(el, text) {
+  el.textContent = "";
+  if (!query) { el.textContent = text; return; }
+  const n = norm(text), q = norm(query);
+  let i = 0, at;
+  while ((at = n.indexOf(q, i)) !== -1) {
+    el.append(text.slice(i, at));
+    const m = document.createElement("mark"); m.textContent = text.slice(at, at + q.length); el.append(m);
+    i = at + q.length;
+  }
+  el.append(text.slice(i));
 }
 
 /* ---------- Матрица Эйзенхауэра ---------- */
@@ -981,7 +1187,7 @@ const viewOf = l => l.view || (/^дела$/i.test(l.name.trim()) ? "matrix" : "l
 document.querySelectorAll(".view-toggle button").forEach(b => b.onclick = () => {
   const m = current(); if (!m) return;
   m.view = b.dataset.view;
-  save(); render();
+  save(m.view === "matrix" ? "Включена матрица" : "Включён список"); render();
 });
 document.querySelectorAll(".quad-head").forEach(h => h.onclick = () => {
   const k = +h.parentElement.dataset.key;
@@ -1008,21 +1214,73 @@ function makeItem(item, meta) {
     cb.className = "check";
     cb.checked = item.done;
     cb.setAttribute("aria-label", "Выполнено");
-    cb.onchange = () => { item.done = cb.checked; save(); render(); };
+    const toggle = () => {
+      item.done = !item.done;
+      save(item.done ? "Отмечено выполненным" : "Снята отметка");
+      render();
+    };
+    cb.onchange = toggle;
 
     const span = document.createElement("span");
     span.className = "text";
-    span.textContent = item.text;
-    span.onclick = () => { item.done = !item.done; save(); render(); };
+    fillText(span, item.text);
+    // один клик — отметить, двойной — редактировать
+    let clickTimer = null;
+    span.onclick = () => { clearTimeout(clickTimer); clickTimer = setTimeout(toggle, 230); };
+    span.ondblclick = () => { clearTimeout(clickTimer); startEdit(li, span, item); };
+
+    const edit = document.createElement("button");
+    edit.className = "edit";
+    edit.textContent = "✎";
+    edit.title = "Изменить";
+    edit.setAttribute("aria-label", "Изменить");
+    edit.onclick = () => startEdit(li, span, item);
 
     const del = document.createElement("button");
     del.className = "del";
     del.textContent = "×";
     del.setAttribute("aria-label", "Удалить");
-    del.onclick = () => { meta.items = meta.items.filter(i => i.id !== item.id); save(); render(); };
+    del.onclick = () => {
+      meta.items = meta.items.filter(i => i.id !== item.id);
+      save(`Удалено «${short(item.text)}»`, { toast: true });
+      render();
+    };
 
-    li.append(grip, cb, span, del);
+    li.append(grip, cb, span, edit, del);
     return li;
+}
+const short = s => s.length > 28 ? s.slice(0, 27) + "…" : s;
+
+/* ---------- Редактирование пункта ---------- */
+let editingItem = false;
+function startEdit(li, span, item) {
+  if (editingItem) return;
+  editingItem = true;
+  li.classList.add("editing");
+  const inp = document.createElement("input");
+  inp.type = "text";
+  inp.className = "edit-input";
+  inp.maxLength = 200;
+  inp.value = item.text;
+  inp.setAttribute("aria-label", "Текст пункта");
+  span.replaceWith(inp);
+  inp.focus();
+  inp.setSelectionRange(inp.value.length, inp.value.length);
+  let finished = false;
+  const finish = commit => {
+    if (finished) return;
+    finished = true;
+    editingItem = false;
+    const v = inp.value.trim();
+    if (commit && v && v !== item.text) { item.text = v; save("Изменён текст"); }
+    render();
+    Sync.flushPending();
+  };
+  inp.onkeydown = e => {
+    if (e.key === "Enter") { e.preventDefault(); finish(true); }
+    if (e.key === "Escape") { e.preventDefault(); finish(false); }
+  };
+  inp.onblur = () => finish(true);
 }
 
 $("form").onsubmit = e => {
@@ -1037,12 +1295,13 @@ $("form").onsubmit = e => {
   justAdded = { id: item.id, quick: now - lastAddAt < 1500 };   // добавляете подряд — анимация почти незаметна
   lastAddAt = now;
   input.value = "";
-  save(); render();
+  save("Добавлено"); render();
 };
 $("clear").onclick = () => {
   const meta = current();
+  const before = meta.items.length;
   meta.items = meta.items.filter(i => !i.done);
-  save(); render();
+  save(`Убраны выполненные (${before - meta.items.length})`, { toast: true }); render();
 };
 
 /* ---------- Редактор категорий ---------- */
@@ -1064,7 +1323,7 @@ function addCategory() {
   const l = { id: uid(), name: "", color, items: [] };
   data.lists.push(l);
   data.active = l.id;
-  save(); renderEditor();
+  save("Новая категория"); renderEditor();
   const inputs = $("catList").querySelectorAll("input");
   inputs[inputs.length - 1].focus();
 }
@@ -1089,7 +1348,7 @@ function renderEditor() {
     sw.onclick = () => {
       l.color = COLORS[(COLORS.indexOf(l.color) + 1) % COLORS.length];
       sw.style.background = l.color;
-      save();
+      save("Цвет категории", { coalesce: true });
     };
 
     const name = document.createElement("input");
@@ -1097,7 +1356,7 @@ function renderEditor() {
     name.value = l.name;
     name.maxLength = 30;
     name.placeholder = "Название категории";
-    name.oninput = () => { l.name = name.value; save(); };
+    name.oninput = () => { l.name = name.value; save("Переименование", { coalesce: true }); };
     name.onkeydown = e => { if (e.key === "Enter") closeEditor(); };
 
     const meta = document.createElement("span");
@@ -1109,10 +1368,9 @@ function renderEditor() {
     del.textContent = "×";
     del.title = "Удалить категорию";
     del.onclick = () => {
-      if (l.items.length && !confirm(`Удалить «${l.name || "Без названия"}» вместе с ${l.items.length} пунктами?`)) return;
       data.lists = data.lists.filter(x => x.id !== l.id);
       if (data.active === l.id) data.active = data.lists[0] ? data.lists[0].id : null;
-      save(); renderEditor();
+      save(`Удалена категория «${short(l.name || "Без названия")}»`, { toast: true }); renderEditor();
     };
 
     li.append(move, sw, name, meta, del);
@@ -1131,7 +1389,7 @@ function renderEditor() {
    • за сам пункт/вкладку: мышью — просто тянуть, пальцем — удержать ~0,3 с и тянуть;
    • можно переносить между несколькими контейнерами (квадраты матрицы). */
 function sortable(root, getContainers, axis, onEnd) {
-  const EXCLUDE = "input, button.del, .swatch, .check";
+  const EXCLUDE = "input, button.del, button.edit, .swatch, .check";
   let state = null;
 
   root.addEventListener("pointerdown", e => {
@@ -1252,9 +1510,14 @@ function sortable(root, getContainers, axis, onEnd) {
 }
 
 const byIds = (arr, ids) => ids.map(id => arr.find(x => x.id === id)).filter(Boolean);
-sortable(listEl, () => [listEl], "y", ([g]) => { const m = current(); m.items = byIds(m.items, g.ids); save(); render(); });
-sortable(tabsEl, () => [tabsEl], "x", ([g]) => { data.lists = byIds(data.lists, g.ids); save(); render(); });
-sortable($("catList"), () => [$("catList")], "y", ([g]) => { data.lists = byIds(data.lists, g.ids); save(); renderEditor(); });
+// при поиске/фильтре на экране не все пункты: переставляем только видимые, скрытые остаются на местах
+function reorderVisible(all, ids) {
+  const set = new Set(ids), queue = byIds(all, ids);
+  return all.map(i => set.has(i.id) ? queue.shift() : i);
+}
+sortable(listEl, () => [listEl], "y", ([g]) => { const m = current(); m.items = reorderVisible(m.items, g.ids); save("Перемещение"); render(); });
+sortable(tabsEl, () => [tabsEl], "x", ([g]) => { data.lists = byIds(data.lists, g.ids); save("Порядок категорий"); render(); });
+sortable($("catList"), () => [$("catList")], "y", ([g]) => { data.lists = byIds(data.lists, g.ids); save("Порядок категорий"); renderEditor(); });
 // матрица: перенос между квадратами меняет «срочность/важность» пункта
 const matrixEl = $("matrixView");
 sortable(matrixEl, () => [...matrixEl.querySelectorAll(".qlist")], "y", groups => {
@@ -1269,7 +1532,7 @@ sortable(matrixEl, () => [...matrixEl.querySelectorAll(".qlist")], "y", groups =
   }));
   m.items.forEach(i => { if (!order.includes(i)) order.push(i); });
   m.items = order;
-  save(); render();
+  save("Перенос в матрице"); render();
 });
 
 /* =====================================================================
@@ -1450,6 +1713,7 @@ const Sync = {
         const adopted = adoptSameNames(syncDoc(data), remote);
         data = { ...data, lists: adopted.lists };
         snap = takeSnap(data);
+        savedLists = JSON.stringify(data.lists);
         store(KEY, JSON.stringify(data));
       }
       const local = syncDoc(data);
@@ -1476,12 +1740,13 @@ const Sync = {
 
   // принять версию из облака (сливаем ещё раз — вдруг вы успели что-то поменять)
   apply(doc) {
-    if (editing) { this.pendingRemote = doc; return; }
+    if (editing || editingItem) { this.pendingRemote = doc; return; }
     const before = JSON.stringify(syncDoc(data));
     const merged = merge(syncDoc(data), doc);
     if (JSON.stringify(merged) === before) return;
     data = { ...merged, active: data.active };
     snap = takeSnap(data);
+    savedLists = JSON.stringify(data.lists);   // правки с других устройств не попадают в «Отменить»
     store(KEY, JSON.stringify(data));
     render();
   },
