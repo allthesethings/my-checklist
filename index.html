@@ -18,7 +18,8 @@
   :root {
     --night: #0b0e15;
     --ink: #f2ecdf;
-    --muted: #a59d8c;
+    --muted: #b3ab9a;
+    --soft: #d6cdb9;   /* подсказки и подзаголовки — светлее, чтобы читались */
     --card: rgba(11, 13, 19, 0.8);
     --line: rgba(233, 226, 210, 0.12);
     --blood: #9b2226;
@@ -147,10 +148,10 @@
   .list-zone { padding: 4px 12px; }
   .list-zone:has(> ul:empty) { padding: 0 12px; }
   .zone-label {
-    font-size: 12px;
+    font-size: 12.5px; font-weight: 500;
     letter-spacing: .14em;
     text-transform: uppercase;
-    color: var(--muted);
+    color: var(--soft);
     margin: 0 2px 6px;
     display: flex; justify-content: space-between; align-items: center;
   }
@@ -241,7 +242,7 @@
     outline: none;
     transition: border-color .2s, box-shadow .2s;
   }
-  input[type="text"]::placeholder, input[type="search"]::placeholder { color: #857e70; font-style: italic; }
+  input[type="text"]::placeholder, input[type="search"]::placeholder { color: #a39b8a; font-style: italic; }
   input[type="text"]:focus {
     border-color: var(--accent);
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
@@ -385,7 +386,7 @@
 
   .empty {
     text-align: center;
-    color: var(--muted);
+    color: var(--soft);
     font-family: "Cormorant Garamond", Georgia, serif;
     font-style: italic;
     font-size: 20px;
@@ -441,7 +442,7 @@
     cursor: pointer;
   }
   .btn:hover { background: var(--accent); }
-  .hint { font-size: 13px; color: var(--muted); font-style: italic; margin-top: 12px; }
+  .hint { font-size: 14.5px; color: var(--soft); margin-top: 12px; line-height: 1.4; }
 
   /* ---------- Вид списка: переключатель ---------- */
   .view-toggle { display: flex; gap: 2px; }
@@ -462,7 +463,7 @@
   }
   .axis {
     font-size: 11px; letter-spacing: .16em; text-transform: uppercase;
-    color: var(--muted); text-align: center; opacity: .8;
+    color: var(--soft); text-align: center; font-weight: 500;
   }
   .axis.v { writing-mode: vertical-rl; transform: rotate(180deg); align-self: center; }
   .quad {
@@ -494,20 +495,20 @@
     font-size: 18px; font-weight: 600; line-height: 1.1;
     color: color-mix(in srgb, var(--q) 55%, var(--ink));
   }
-  .quad-sub { display: block; font-size: 11.5px; color: var(--muted); font-style: italic; font-weight: 400; font-family: "EB Garamond", serif; }
-  .quad-count { font-size: 12px; color: var(--muted); }
+  .quad-sub { display: block; font-size: 13px; color: var(--soft); font-style: normal; font-weight: 400; font-family: "EB Garamond", serif; margin-top: 2px; opacity: .92; }
+  .quad-count { font-size: 13px; color: var(--soft); font-weight: 500; }
   .quad.target { box-shadow: inset 0 0 0 1px var(--q), 0 0 18px -4px var(--q); }
   .quad.target .quad-head::after { content: "＋"; color: var(--q); margin-left: 4px; }
   .qlist { flex: 1; min-height: 40px; border-radius: 3px; transition: background .15s; }
   .qlist.over { background: rgba(255,255,255,.04); }
   .qlist li.item { gap: 7px; padding: 6px 0; font-size: 15px; line-height: 1.25; }
   .qlist .check { width: 13px; height: 13px; margin: 0 2px; }
-  .qlist .grip { display: none; }
+  .qlist .grip, .nodrag .grip { display: none; }
   .qlist .del { font-size: 16px; padding: 2px 3px; }
   .qlist:empty::before {
     content: attr(data-hint);
     display: block; padding: 10px 2px 4px;
-    font-size: 13px; font-style: italic; color: color-mix(in srgb, var(--muted) 70%, transparent);
+    font-size: 14.5px; font-style: normal; color: var(--soft); opacity: .85;
   }
   .inbox { margin-bottom: 10px; }
   .inbox .qlist:empty::before { padding: 8px 2px; }
@@ -530,7 +531,8 @@
   body.blood .leaf { background-color: #7d0d12 !important; }
   body.blood {
     --line: rgba(214, 120, 110, 0.15);
-    --muted: #b0958d;
+    --muted: #bea29a;
+    --soft: #e0c9c2;
     --card: rgba(18, 8, 10, 0.8);
   }
   body.blood .app {
@@ -602,15 +604,118 @@
   .who b { color: var(--ink); font-weight: 500; }
   .btn:disabled { opacity: .5; cursor: wait; }
 
+  /* ---------- Настройки ---------- */
+  .settings-view { display: none; }
+  .app.setting .settings-view { display: block; }
+  .app.setting .main-view { display: none; }
+  .settings-view h2, .type-picker h3 {
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-weight: 500; font-size: 24px;
+    margin: 0 0 6px;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 10px;
+  }
+  .set-row { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+  .set-row.col { flex-direction: column; align-items: stretch; }
+  .set-row:last-child { border-bottom: none; }
+  .set-row .desc { font-size: 14.5px; color: var(--soft); margin-top: 3px; line-height: 1.4; }
+  .switch { position: relative; width: 46px; height: 26px; flex: none; }
+  .switch input { opacity: 0; position: absolute; inset: 0; margin: 0; cursor: pointer; z-index: 1; }
+  .switch span { position: absolute; inset: 0; border-radius: 13px; background: rgba(0,0,0,.45); border: 1px solid var(--line); transition: background .2s; }
+  .switch span::after { content: ""; position: absolute; top: 4px; left: 4px; width: 16px; height: 16px; border-radius: 50%; background: var(--soft); transition: transform .2s; }
+  .switch input:checked + span { background: color-mix(in srgb, var(--accent) 65%, transparent); }
+  .switch input:checked + span::after { transform: translateX(20px); background: var(--ink); }
+  .switch input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .btn.ghost { background: transparent; border-color: var(--line); }
+  .btn.ghost:hover { border-color: var(--accent); background: transparent; }
+  .import-confirm { margin-top: 12px; padding: 12px; }
+
+  /* ---------- Типы категорий ---------- */
+  .type-picker { display: none; margin-top: 14px; padding: 14px; }
+  .type-picker.open { display: block; }
+  .type-picker h3 { font-size: 20px; border: none; padding: 0; }
+  .type-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 8px; }
+  .type-grid button {
+    text-align: left; font: inherit; color: var(--ink);
+    background: rgba(0,0,0,.28); border: 1px solid var(--line); border-radius: 4px;
+    padding: 10px 12px; cursor: pointer; transition: border-color .2s;
+  }
+  .type-grid button:hover { border-color: var(--accent); }
+  .type-grid b { font-weight: 600; }
+  .type-grid small { display: block; color: var(--soft); font-size: 14px; margin-top: 2px; line-height: 1.3; }
+  select.type-select, select.sort-select {
+    font: inherit; font-size: 14.5px; color: var(--ink);
+    background: rgba(0,0,0,.4); border: 1px solid var(--line); border-radius: 4px;
+    padding: 4px 6px; flex: none; max-width: 120px;
+  }
+  select option { background: #15171e; color: var(--ink); }
+  .zone-label .right { display: flex; align-items: center; gap: 8px; }
+  .sort-select { text-transform: none; letter-spacing: 0; }
+
+  /* ---------- Книги и фильмы: автор/режиссёр и оценка ---------- */
+  .ibody { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .ibody .text { flex: none; }
+  .sub { font-size: 14.5px; color: var(--soft); margin-top: 1px; cursor: pointer; }
+  li.done .sub { opacity: .7; }
+  .stars { display: flex; flex: none; }
+  .stars button {
+    border: none; background: none; padding: 2px 1px; font-size: 17px; line-height: 1;
+    color: rgba(233,226,210,.25); cursor: pointer; transition: color .15s, transform .1s;
+  }
+  .stars button.on { color: #e0b04f; text-shadow: 0 0 6px rgba(224,176,79,.45); }
+  .stars button:hover { transform: scale(1.18); }
+  body.blood .stars button.on { color: #ec4046; text-shadow: 0 0 6px rgba(236,64,70,.5); }
+  .edit-fields { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+  form.add-form { flex-wrap: wrap; }
+  form.add-form #input { flex: 1 1 55%; }
+  form.add-form #person { flex: 1 1 30%; min-width: 0; }
+
+  /* ---------- Меньше анимации ---------- */
+  body.calm .leaves { display: none; }
+  body.calm .fog, body.calm .flicker { animation: none; }
+  body.calm .blood-flash.go, body.calm li.item.new { animation: none; }
+  body.calm *, body.calm *::before, body.calm *::after { transition-duration: .01ms !important; }
+
+  /* ---------- Широкий экран: карточка шире, список крупнее ---------- */
+  @media (min-width: 900px) {
+    body { font-size: 18.5px; padding-top: max(44px, env(safe-area-inset-top)); }
+    .app { max-width: 860px; padding: 40px 46px 30px; }
+    h1 { font-size: 50px; }
+    .list-zone { padding: 6px 18px; }
+    li.item { padding: 12px 4px; }
+    .matrix { gap: 10px; grid-template-columns: 22px 1fr 1fr; }
+    .quad { min-height: 200px; padding: 12px 14px 8px; }
+    .quad-title { font-size: 22px; }
+    .quad-sub { font-size: 14px; }
+    .qlist li.item { font-size: 17px; padding: 8px 0; }
+    .qlist .check { width: 15px; height: 15px; }
+    .seg button { font-size: 15px; padding: 7px 14px; }
+  }
+  @media (min-width: 1300px) {
+    .app { max-width: 1040px; }
+    .quad { min-height: 240px; }
+  }
+
   @media (max-width: 480px) {
     body { padding: 24px 16px; }
     .app { padding: 26px 18px 18px; }
     h1 { font-size: 36px; }
+    header { flex-wrap: wrap; }
+    .type-grid { grid-template-columns: 1fr; }
+  }
+  /* узкий экран: звёзды — отдельной строкой под названием, поле автора — под основным */
+  @media (max-width: 560px) {
+    li.item:has(.stars) { flex-wrap: wrap; row-gap: 2px; }
+    li.item .stars { order: 10; flex-basis: 100%; padding-left: 58px; }
+    li.item .stars button { font-size: 19px; padding: 2px 3px; }
+    form.add-form #input { flex: 1 1 100%; }
+    form.add-form #person { flex: 1 1 0; }
   }
 </style>
 </head>
 <body>
-<script>try { if (localStorage.getItem("checklist-theme") === "blood") document.body.classList.add("blood"); } catch (e) {}</script>
+<script>try { if (localStorage.getItem("checklist-theme") === "blood") document.body.classList.add("blood"); var __calm = localStorage.getItem("checklist-calm"); if (__calm === "on" || (__calm === null && matchMedia("(prefers-reduced-motion: reduce)").matches)) document.body.classList.add("calm"); } catch (e) {}</script>
 
 <!-- ========== Фоновая картина: готический город под полной луной ========== -->
 <svg class="art" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
@@ -812,6 +917,7 @@
       <button class="icon-btn" id="moonBtn" title="Кровавая луна" aria-label="Кровавая луна">☾</button>
       <button class="icon-btn" id="syncBtn" title="Синхронизация" aria-label="Синхронизация">☁<span class="dot"></span></button>
       <button class="icon-btn" id="editBtn" title="Редактировать категории" aria-label="Редактировать категории">✎</button>
+      <button class="icon-btn" id="settingsBtn" title="Настройки и резервная копия" aria-label="Настройки">⚙</button>
     </div>
   </header>
 
@@ -821,6 +927,7 @@
       <div class="zone input-zone">
         <form class="add-form" id="form" autocomplete="off">
           <input type="text" id="input" maxlength="200" placeholder="Добавить пункт…">
+          <input type="text" id="person" maxlength="80" placeholder="Режиссёр" style="display:none">
           <button class="add" type="submit" aria-label="Добавить">+</button>
         </form>
       </div>
@@ -840,9 +947,17 @@
 
       <div class="zone-label">
         <span id="viewLabel">Пункты</span>
-        <div class="view-toggle" role="group" aria-label="Вид">
-          <button type="button" data-view="list">Список</button>
-          <button type="button" data-view="matrix">Матрица</button>
+        <div class="right">
+          <select class="sort-select" id="sortSelect" aria-label="Сортировка" style="display:none">
+            <option value="manual">Свой порядок</option>
+            <option value="rating">По оценке</option>
+            <option value="person">По режиссёру</option>
+            <option value="title">По названию</option>
+          </select>
+          <div class="view-toggle" id="viewToggle" role="group" aria-label="Вид">
+            <button type="button" data-view="list">Список</button>
+            <button type="button" data-view="matrix">Матрица</button>
+          </div>
         </div>
       </div>
 
@@ -902,7 +1017,43 @@
       <button class="link-btn" id="addCat">+ Новая категория</button>
       <button class="btn" id="doneEdit">Готово</button>
     </div>
-    <div class="hint">Кружок меняет цвет. Тяните за ⋮⋮, чтобы поменять порядок, — или перетаскивайте прямо вкладки. Удалили лишнее — Ctrl+Z или «Отменить» внизу.</div>
+    <div class="zone type-picker" id="typePicker">
+      <h3>Какая это будет категория?</h3>
+      <div class="type-grid">
+        <button type="button" data-type="tasks"><b>Задачи</b><small>Срочность и важность — матрица Эйзенхауэра</small></button>
+        <button type="button" data-type="books"><b>Книги</b><small>Автор и оценка, сортировка по ним</small></button>
+        <button type="button" data-type="films"><b>Фильмы</b><small>Режиссёр и оценка, сортировка по ним</small></button>
+        <button type="button" data-type="plain"><b>Простой список</b><small>Только пункты и галочки</small></button>
+      </div>
+    </div>
+    <div class="hint">Тип определяет, что есть у пунктов: матрица у задач, автор/режиссёр и оценка у книг и фильмов. Его можно сменить в списке справа — данные не теряются. Кружок меняет цвет, ⋮⋮ — порядок. Удалили лишнее — Ctrl+Z или «Отменить» внизу.</div>
+  </section>
+
+  <section class="settings-view">
+    <h2>Настройки</h2>
+    <div class="set-row col">
+      <div>
+        <div>Резервная копия</div>
+        <div class="desc">Все категории и пункты одним файлом .json. Файл не зашифрован — храните его в надёжном месте.</div>
+      </div>
+      <div class="btn-row">
+        <button type="button" class="btn" id="exportBtn">Скачать копию</button>
+        <button type="button" class="btn ghost" id="importBtn">Загрузить из файла…</button>
+        <input type="file" id="importFile" accept="application/json,.json" hidden>
+      </div>
+      <div class="zone import-confirm" id="importConfirm" style="display:none"></div>
+    </div>
+    <div class="set-row">
+      <div>
+        <div>Меньше анимации</div>
+        <div class="desc" id="calmDesc">Без падающих листьев, тумана и вспышек. Интерфейс отвечает мгновенно.</div>
+      </div>
+      <label class="switch"><input type="checkbox" id="calmToggle" aria-label="Меньше анимации"><span></span></label>
+    </div>
+    <div class="sync-row">
+      <span></span>
+      <button class="btn" id="closeSettings">Готово</button>
+    </div>
   </section>
 
   <section class="sync-view">
@@ -929,12 +1080,32 @@ function defaults() {
   return {
     active: null,
     lists: [
-      { id: uid(), name: "Дела",   color: COLORS[0], items: [] },
-      { id: uid(), name: "Книги",  color: COLORS[1], items: [] },
-      { id: uid(), name: "Фильмы", color: COLORS[3], items: [] },
+      { id: uid(), name: "Дела",   type: "tasks", color: COLORS[0], items: [] },
+      { id: uid(), name: "Книги",  type: "books", color: COLORS[1], items: [] },
+      { id: uid(), name: "Фильмы", type: "films", color: COLORS[3], items: [] },
     ],
   };
 }
+
+/* ---------- Типы категорий ----------
+   Тип хранится в самой категории и не зависит от названия:
+   удалите «Фильмы», создайте «Кино» с типом «Фильмы» — всё будет на месте. */
+const TYPES = {
+  tasks: { name: "Задачи", def: "Дела",   matrix: true },
+  books: { name: "Книги",  def: "Книги",  person: "Автор",    personShort: "",     rating: true },
+  films: { name: "Фильмы", def: "Фильмы", person: "Режиссёр", personShort: "реж. ", rating: true },
+  plain: { name: "Простой список", def: "Список" },
+};
+// для старых категорий без типа — угадываем один раз по названию
+const guessType = name => {
+  const n = (name || "").trim().toLowerCase();
+  if (/^(дела|задачи|todo)/.test(n)) return "tasks";
+  if (/книг|чтени/.test(n)) return "books";
+  if (/фильм|кино|сериал/.test(n)) return "films";
+  return "plain";
+};
+const typeOf = l => TYPES[l.type] ? l.type : guessType(l.name);
+const T = l => TYPES[typeOf(l)];
 
 function load() {
   try {
@@ -955,6 +1126,7 @@ function load() {
 }
 
 let data = load();
+data.lists.forEach(l => { if (!TYPES[l.type]) l.type = guessType(l.name); });   // закрепляем тип
 let editing = false;
 
 /* Сохранение. Сравниваем с прошлым снимком, чтобы знать, что поменялось:
@@ -963,8 +1135,8 @@ let editing = false;
 function takeSnap(d) {
   const m = new Map();
   d.lists.forEach(l => {
-    m.set(l.id, JSON.stringify([l.name, l.color, l.view || ""]));
-    l.items.forEach(i => m.set(i.id, JSON.stringify([i.text, !!i.done, i.q || 0])));
+    m.set(l.id, JSON.stringify([l.name, l.color, l.view || "", l.type || ""]));
+    l.items.forEach(i => m.set(i.id, JSON.stringify([i.text, !!i.done, i.q || 0, i.rating || 0, i.person || ""])));
   });
   m.set("__order", d.lists.map(l => l.id + ":" + l.items.map(i => i.id).join(",")).join("|"));
   return m;
@@ -1092,20 +1264,35 @@ function render() {
   });
   if (!has) return;
 
+  const type = T(meta), kind = typeOf(meta);
   const matrix = viewOf(meta) === "matrix";
   if (!matrix) addTarget = 0;
+  $("viewToggle").style.display = type.matrix ? "" : "none";
   document.querySelectorAll(".view-toggle button").forEach(b => b.classList.toggle("on", b.dataset.view === (matrix ? "matrix" : "list")));
-  $("viewLabel").textContent = matrix ? "Срочность × важность" : "Пункты";
+  $("viewLabel").textContent = matrix ? "Срочность × важность" : kind === "books" ? "Книги" : kind === "films" ? "Фильмы" : "Пункты";
   $("listView").style.display = matrix ? "none" : "";
   $("matrixView").style.display = matrix ? "" : "none";
+  // книги и фильмы: поле автора/режиссёра и сортировка
+  $("person").style.display = type.person ? "" : "none";
+  $("person").placeholder = type.person ? `${type.person} (необязательно)` : "";
+  const sortSel = $("sortSelect");
+  sortSel.style.display = type.rating ? "" : "none";
+  if (type.rating) {
+    sortSel.options[2].textContent = kind === "books" ? "По автору" : "По режиссёру";
+    sortSel.value = sortOf(meta);
+  }
+  listEl.classList.toggle("nodrag", sortOf(meta) !== "manual");   // при сортировке порядок задаёт она
   const target = addTarget && QUADS[addTarget];
-  input.placeholder = target ? `Добавить в «${target}»…` : `Добавить в «${meta.name}»…`;
+  input.placeholder = target ? `Добавить в «${target}»…`
+    : kind === "books" ? "Название книги…"
+    : kind === "films" ? "Название фильма…"
+    : `Добавить в «${meta.name}»…`;
   document.querySelectorAll(".quad").forEach(q => q.classList.toggle("target", +q.dataset.key === addTarget));
 
   listEl.innerHTML = "";
   const qlists = {};
   document.querySelectorAll("#matrixView .qlist").forEach(u => { u.innerHTML = ""; qlists[u.dataset.key] = u; });
-  const shown = meta.items.filter(visible);
+  const shown = matrix ? meta.items.filter(visible) : sorted(meta.items.filter(visible), meta);
   shown.forEach(item => {
     const li = makeItem(item, meta);
     if (matrix) qlists[QUADS[item.q] ? item.q : 0].appendChild(li);
@@ -1155,7 +1342,7 @@ const FILTER_KEY = "checklist-filter";
 let filter = ["all", "active", "done"].includes(read(FILTER_KEY)) ? read(FILTER_KEY) : "all";
 let query = "";
 const norm = s => s.toLocaleLowerCase("ru").replace(/ё/g, "е");
-const visible = i => (filter === "all" || (filter === "done") === !!i.done) && (!query || norm(i.text).includes(norm(query)));
+const visible = i => (filter === "all" || (filter === "done") === !!i.done) && (!query || norm(i.text + " " + (i.person || "")).includes(norm(query)));
 
 document.querySelectorAll("#filterSeg button").forEach(b => b.onclick = () => {
   filter = b.dataset.f; store(FILTER_KEY, filter); render();
@@ -1181,8 +1368,8 @@ function fillText(el, text) {
 /* ---------- Матрица Эйзенхауэра ---------- */
 const QUADS = { 1: "Сейчас", 2: "Запланировать", 3: "Поручить", 4: "Отпустить" };
 let addTarget = 0;       // в какой квадрат добавлять новые пункты (0 — «Неразобранное»)
-// по умолчанию матрица включена у «Дел», у остальных — обычный список
-const viewOf = l => l.view || (/^дела$/i.test(l.name.trim()) ? "matrix" : "list");
+// матрица — только у категорий типа «Задачи» (по умолчанию включена), у остальных всегда список
+const viewOf = l => T(l).matrix ? (l.view || "matrix") : "list";
 
 document.querySelectorAll(".view-toggle button").forEach(b => b.onclick = () => {
   const m = current(); if (!m) return;
@@ -1196,91 +1383,172 @@ document.querySelectorAll(".quad-head").forEach(h => h.onclick = () => {
   input.focus();
 });
 
+/* ---------- Сортировка книг и фильмов (на этом устройстве, данные не меняет) ---------- */
+const SORT_KEY = "checklist-sort";
+let sorts = {};
+try { sorts = JSON.parse(read(SORT_KEY)) || {}; } catch (e) {}
+const sortOf = l => (T(l).rating && sorts[l.id]) || "manual";
+const coll = new Intl.Collator("ru", { sensitivity: "base" });
+function sorted(items, l) {
+  const s = sortOf(l);
+  if (s === "manual") return items;
+  const arr = [...items];
+  if (s === "rating") arr.sort((a, b) => (b.rating || 0) - (a.rating || 0) || coll.compare(a.text, b.text));
+  if (s === "title") arr.sort((a, b) => coll.compare(a.text, b.text));
+  if (s === "person") arr.sort((a, b) => {
+    const pa = (a.person || "").trim(), pb = (b.person || "").trim();
+    if (!pa !== !pb) return pa ? -1 : 1;           // без автора/режиссёра — в конец
+    return coll.compare(pa, pb) || coll.compare(a.text, b.text);
+  });
+  return arr;
+}
+$("sortSelect").onchange = () => {
+  const m = current(); if (!m) return;
+  sorts[m.id] = $("sortSelect").value;
+  store(SORT_KEY, JSON.stringify(sorts));
+  render();
+};
+
 /* ---------- Пункт ---------- */
 let justAdded = null, lastAddAt = 0;
 function makeItem(item, meta) {
-    const li = document.createElement("li");
-    li.className = "item" + (item.done ? " done" : "");
-    if (justAdded && justAdded.id === item.id) li.classList.add("new", ...(justAdded.quick ? ["quick"] : []));
-    li.dataset.id = item.id;
+  const type = T(meta);
+  const li = document.createElement("li");
+  li.className = "item" + (item.done ? " done" : "");
+  if (justAdded && justAdded.id === item.id) li.classList.add("new", ...(justAdded.quick ? ["quick"] : []));
+  li.dataset.id = item.id;
 
-    const grip = document.createElement("span");
-    grip.className = "grip";
-    grip.textContent = "⋮⋮";
-    grip.title = "Перетащить";
+  const grip = document.createElement("span");
+  grip.className = "grip";
+  grip.textContent = "⋮⋮";
+  grip.title = "Перетащить";
 
-    const cb = document.createElement("input");
-    cb.type = "checkbox";
-    cb.className = "check";
-    cb.checked = item.done;
-    cb.setAttribute("aria-label", "Выполнено");
-    const toggle = () => {
-      item.done = !item.done;
-      save(item.done ? "Отмечено выполненным" : "Снята отметка");
-      render();
-    };
-    cb.onchange = toggle;
+  const cb = document.createElement("input");
+  cb.type = "checkbox";
+  cb.className = "check";
+  cb.checked = item.done;
+  cb.setAttribute("aria-label", type.rating ? (typeOf(meta) === "books" ? "Прочитано" : "Просмотрено") : "Выполнено");
+  const toggle = () => {
+    item.done = !item.done;
+    save(item.done ? "Отмечено выполненным" : "Снята отметка");
+    render();
+  };
+  cb.onchange = toggle;
 
-    const span = document.createElement("span");
-    span.className = "text";
-    fillText(span, item.text);
-    // один клик — отметить, двойной — редактировать
-    let clickTimer = null;
-    span.onclick = () => { clearTimeout(clickTimer); clickTimer = setTimeout(toggle, 230); };
-    span.ondblclick = () => { clearTimeout(clickTimer); startEdit(li, span, item); };
+  const span = document.createElement("span");
+  span.className = "text";
+  fillText(span, item.text);
+  // один клик — отметить, двойной — редактировать
+  let clickTimer = null;
+  span.onclick = () => { clearTimeout(clickTimer); clickTimer = setTimeout(toggle, 230); };
 
-    const edit = document.createElement("button");
-    edit.className = "edit";
-    edit.textContent = "✎";
-    edit.title = "Изменить";
-    edit.setAttribute("aria-label", "Изменить");
-    edit.onclick = () => startEdit(li, span, item);
+  // у книг и фильмов под названием — автор/режиссёр
+  let body = span;
+  if (type.person) {
+    body = document.createElement("div");
+    body.className = "ibody";
+    body.append(span);
+    if (item.person) {
+      const sub = document.createElement("span");
+      sub.className = "sub";
+      sub.append(type.personShort);
+      const p = document.createElement("span"); fillText(p, item.person); sub.append(p);
+      sub.title = "Изменить";
+      sub.onclick = () => startEdit(li, body, item, meta, true);
+      body.append(sub);
+    }
+  }
+  span.ondblclick = () => { clearTimeout(clickTimer); startEdit(li, body, item, meta); };
 
-    const del = document.createElement("button");
-    del.className = "del";
-    del.textContent = "×";
-    del.setAttribute("aria-label", "Удалить");
-    del.onclick = () => {
-      meta.items = meta.items.filter(i => i.id !== item.id);
-      save(`Удалено «${short(item.text)}»`, { toast: true });
-      render();
-    };
+  const parts = [grip, cb, body];
 
-    li.append(grip, cb, span, edit, del);
-    return li;
+  if (type.rating) {
+    const stars = document.createElement("div");
+    stars.className = "stars";
+    stars.setAttribute("role", "group");
+    stars.setAttribute("aria-label", "Оценка");
+    for (let n = 1; n <= 5; n++) {
+      const s = document.createElement("button");
+      s.type = "button";
+      s.textContent = "★";
+      s.className = n <= (item.rating || 0) ? "on" : "";
+      s.title = `Оценка ${n} из 5`;
+      s.setAttribute("aria-label", s.title);
+      s.onclick = () => {
+        item.rating = item.rating === n ? 0 : n;          // повторный клик по той же звезде — снять оценку
+        save(item.rating ? `Оценка ${n}` : "Оценка снята");
+        render();
+      };
+      stars.append(s);
+    }
+    parts.push(stars);
+  }
+
+  const edit = document.createElement("button");
+  edit.className = "edit";
+  edit.textContent = "✎";
+  edit.title = "Изменить";
+  edit.setAttribute("aria-label", "Изменить");
+  edit.onclick = () => startEdit(li, body, item, meta);
+
+  const del = document.createElement("button");
+  del.className = "del";
+  del.textContent = "×";
+  del.setAttribute("aria-label", "Удалить");
+  del.onclick = () => {
+    meta.items = meta.items.filter(i => i.id !== item.id);
+    save(`Удалено «${short(item.text)}»`, { toast: true });
+    render();
+  };
+
+  li.append(...parts, edit, del);
+  return li;
 }
 const short = s => s.length > 28 ? s.slice(0, 27) + "…" : s;
 
 /* ---------- Редактирование пункта ---------- */
 let editingItem = false;
-function startEdit(li, span, item) {
+function startEdit(li, el, item, meta, focusPerson = false) {
   if (editingItem) return;
   editingItem = true;
   li.classList.add("editing");
-  const inp = document.createElement("input");
-  inp.type = "text";
-  inp.className = "edit-input";
-  inp.maxLength = 200;
-  inp.value = item.text;
-  inp.setAttribute("aria-label", "Текст пункта");
-  span.replaceWith(inp);
-  inp.focus();
-  inp.setSelectionRange(inp.value.length, inp.value.length);
+  const type = T(meta);
+  const box = document.createElement("div");
+  box.className = "edit-fields";
+  const mk = (value, label, max) => {
+    const inp = document.createElement("input");
+    inp.type = "text"; inp.className = "edit-input"; inp.maxLength = max;
+    inp.value = value || ""; inp.placeholder = label; inp.setAttribute("aria-label", label);
+    box.append(inp);
+    return inp;
+  };
+  const tIn = mk(item.text, "Название", 200);
+  const pIn = type.person ? mk(item.person, type.person, 80) : null;
+  el.replaceWith(box);
+  const first = focusPerson && pIn ? pIn : tIn;
+  first.focus();
+  first.setSelectionRange(first.value.length, first.value.length);
+
   let finished = false;
   const finish = commit => {
     if (finished) return;
     finished = true;
     editingItem = false;
-    const v = inp.value.trim();
-    if (commit && v && v !== item.text) { item.text = v; save("Изменён текст"); }
+    const t = tIn.value.trim(), p = pIn ? pIn.value.trim() : item.person;
+    if (commit && t && (t !== item.text || (pIn && p !== (item.person || "")))) {
+      item.text = t;
+      if (pIn) { if (p) item.person = p; else delete item.person; }
+      save("Изменён пункт");
+    }
     render();
     Sync.flushPending();
   };
-  inp.onkeydown = e => {
+  box.addEventListener("keydown", e => {
     if (e.key === "Enter") { e.preventDefault(); finish(true); }
     if (e.key === "Escape") { e.preventDefault(); finish(false); }
-  };
-  inp.onblur = () => finish(true);
+  });
+  // уход фокуса за пределы обоих полей — сохраняем
+  box.addEventListener("focusout", () => setTimeout(() => { if (!box.contains(document.activeElement)) finish(true); }, 0));
 }
 
 $("form").onsubmit = e => {
@@ -1290,11 +1558,14 @@ $("form").onsubmit = e => {
   if (!text || !meta) return;
   const item = { id: uid(), text, done: false };
   if (addTarget && viewOf(meta) === "matrix") item.q = addTarget;
+  const person = $("person").value.trim();
+  if (T(meta).person && person) item.person = person;
   meta.items.push(item);
   const now = Date.now();
   justAdded = { id: item.id, quick: now - lastAddAt < 1500 };   // добавляете подряд — анимация почти незаметна
   lastAddAt = now;
-  input.value = "";
+  input.value = ""; $("person").value = "";
+  input.focus();
   save("Добавлено"); render();
 };
 $("clear").onclick = () => {
@@ -1305,27 +1576,36 @@ $("clear").onclick = () => {
 };
 
 /* ---------- Редактор категорий ---------- */
-function openEditor() { closeSync(); editing = true; app.classList.add("editing"); $("editBtn").classList.add("on"); renderEditor(); }
+function openEditor() { closeSync(); closeSettings(); editing = true; app.classList.add("editing"); $("editBtn").classList.add("on"); renderEditor(); }
 function closeEditor() {
   data.lists.forEach(l => { if (!l.name.trim()) l.name = "Без названия"; });
-  editing = false; app.classList.remove("editing"); $("editBtn").classList.remove("on");
+  editing = false; app.classList.remove("editing"); $("editBtn").classList.remove("on"); $("typePicker").classList.remove("open");
   save(); render();
   Sync.flushPending();
 }
 $("editBtn").onclick = () => editing ? closeEditor() : openEditor();
 $("doneEdit").onclick = closeEditor;
-$("noListsAdd").onclick = () => { openEditor(); addCategory(); };
-$("addCat").onclick = addCategory;
+$("noListsAdd").onclick = () => { openEditor(); $("typePicker").classList.add("open"); };
+$("addCat").onclick = () => $("typePicker").classList.toggle("open");
+document.querySelectorAll("#typePicker [data-type]").forEach(b => b.onclick = () => {
+  $("typePicker").classList.remove("open");
+  addCategory(b.dataset.type);
+});
 
-function addCategory() {
+function addCategory(type = "plain") {
   const used = data.lists.map(l => l.color);
   const color = COLORS.find(c => !used.includes(c)) || COLORS[data.lists.length % COLORS.length];
-  const l = { id: uid(), name: "", color, items: [] };
+  // название по умолчанию — по типу; если такое уже есть, добавим номер
+  const base = TYPES[type].def;
+  let name = base, k = 2;
+  while (data.lists.some(x => x.name.trim().toLowerCase() === name.toLowerCase())) name = `${base} ${k++}`;
+  const l = { id: uid(), name, type, color, items: [] };
   data.lists.push(l);
   data.active = l.id;
-  save("Новая категория"); renderEditor();
-  const inputs = $("catList").querySelectorAll("input");
-  inputs[inputs.length - 1].focus();
+  save(`Новая категория «${name}»`); renderEditor();
+  const inputs = $("catList").querySelectorAll("input[type=text]");
+  const last = inputs[inputs.length - 1];
+  last.focus(); last.select();
 }
 
 function renderEditor() {
@@ -1359,6 +1639,13 @@ function renderEditor() {
     name.oninput = () => { l.name = name.value; save("Переименование", { coalesce: true }); };
     name.onkeydown = e => { if (e.key === "Enter") closeEditor(); };
 
+    const typeSel = document.createElement("select");
+    typeSel.className = "type-select";
+    typeSel.title = "Тип категории";
+    typeSel.setAttribute("aria-label", "Тип категории");
+    Object.entries(TYPES).forEach(([k, t]) => typeSel.add(new Option(t.name, k, false, k === typeOf(l))));
+    typeSel.onchange = () => { l.type = typeSel.value; save(`Тип: ${TYPES[l.type].name}`); };
+
     const meta = document.createElement("span");
     meta.className = "meta";
     meta.textContent = l.items.length ? l.items.length + " шт." : "";
@@ -1373,7 +1660,7 @@ function renderEditor() {
       save(`Удалена категория «${short(l.name || "Без названия")}»`, { toast: true }); renderEditor();
     };
 
-    li.append(move, sw, name, meta, del);
+    li.append(move, sw, name, typeSel, meta, del);
     ul.appendChild(li);
   });
   if (!data.lists.length) {
@@ -1396,6 +1683,7 @@ function sortable(root, getContainers, axis, onEnd) {
     if (e.button !== 0 || state) return;
     const el = e.target.closest("[data-id]");
     if (!el || !root.contains(el) || !getContainers().includes(el.parentElement)) return;
+    if (root.classList.contains("nodrag")) return;   // включена сортировка — порядок не перетаскивается
     const onGrip = !!e.target.closest(".grip");
     if (!onGrip && e.target.closest(EXCLUDE)) return;
     // в редакторе тянем только за ⋮⋮, чтобы не мешать вводу текста
@@ -1462,6 +1750,7 @@ function sortable(root, getContainers, axis, onEnd) {
 
   // плавно сдвигаем соседей на новые места
   function flip(els, mutate) {
+    if (document.body.classList.contains("calm")) { mutate(); return; }
     const first = new Map(els.map(n => [n, n.getBoundingClientRect()]));
     mutate();
     els.forEach(n => {
@@ -1782,7 +2071,7 @@ const Sync = {
 
 /* --- панель синхронизации --- */
 let syncing = false;
-function openSync() { if (editing) closeEditor(); syncing = true; app.classList.add("syncing"); $("syncBtn").classList.add("on"); renderSync(); }
+function openSync() { if (editing) closeEditor(); closeSettings(); syncing = true; app.classList.add("syncing"); $("syncBtn").classList.add("on"); renderSync(); }
 function closeSync() { syncing = false; app.classList.remove("syncing"); $("syncBtn").classList.remove("on"); }
 $("syncBtn").onclick = () => syncing ? closeSync() : openSync();
 $("closeSync").onclick = closeSync;
@@ -1867,6 +2156,115 @@ function renderSync() {
 
 window.addEventListener("online", () => Sync.syncNow());
 document.addEventListener("visibilitychange", () => { if (!document.hidden) Sync.syncNow(); });
+
+/* ---------- Настройки ---------- */
+let setting = false;
+function openSettings() {
+  if (editing) closeEditor();
+  closeSync();
+  setting = true; app.classList.add("setting"); $("settingsBtn").classList.add("on");
+  $("importConfirm").style.display = "none";
+}
+function closeSettings() { setting = false; app.classList.remove("setting"); $("settingsBtn").classList.remove("on"); }
+$("settingsBtn").onclick = () => setting ? closeSettings() : openSettings();
+$("closeSettings").onclick = closeSettings;
+
+/* --- резервная копия: экспорт --- */
+$("exportBtn").onclick = () => {
+  const payload = { app: "nochnye-zapisi", format: 1, exportedAt: new Date().toISOString(), lists: data.lists };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `nochnye-zapisi-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  const n = data.lists.reduce((s, l) => s + l.items.length, 0);
+  showToast(`Копия сохранена: ${data.lists.length} кат., ${n} пунктов`, false);
+};
+
+/* --- резервная копия: импорт (данные из файла проверяем и чистим) --- */
+function sanitizeLists(arr) {
+  if (!Array.isArray(arr)) throw new Error("это не резервная копия «Ночных записей»");
+  const str = (v, max) => typeof v === "string" ? v.slice(0, max) : "";
+  const lists = arr.filter(l => l && typeof l === "object").map(l => {
+    const name = str(l.name, 30).trim() || "Без названия";
+    const out = {
+      id: str(l.id, 40) || uid(),
+      name,
+      type: TYPES[l.type] ? l.type : guessType(name),
+      color: COLORS.includes(l.color) ? l.color : COLORS[0],
+      items: (Array.isArray(l.items) ? l.items : [])
+        .filter(i => i && typeof i === "object" && str(i.text, 200).trim())
+        .map(i => {
+          const it = { id: str(i.id, 40) || uid(), text: str(i.text, 200).trim(), done: !!i.done };
+          if ([1, 2, 3, 4].includes(i.q)) it.q = i.q;
+          if ([1, 2, 3, 4, 5].includes(i.rating)) it.rating = i.rating;
+          const p = str(i.person, 80).trim(); if (p) it.person = p;
+          return it;
+        }),
+    };
+    if (l.view === "list" || l.view === "matrix") out.view = l.view;
+    return out;
+  });
+  if (!lists.length) throw new Error("в файле нет категорий");
+  return lists;
+}
+function applyImport(lists, mode) {
+  const now = Date.now();
+  // импортированное считаем свежей правкой — чтобы синхронизация не приняла его за удалённое
+  lists.forEach(l => { l.updatedAt = now; l.items.forEach(i => { i.updatedAt = now; }); });
+  if (mode === "replace") data.lists = lists;
+  else data.lists = merge({ lists: data.lists, deleted: {}, updatedAt: 1 }, { lists, deleted: {}, updatedAt: 0 }).lists;
+  data.lists.forEach(l => { delete (data.deleted || {})[l.id]; l.items.forEach(i => delete (data.deleted || {})[i.id]); });
+  if (!current()) data.active = data.lists[0] && data.lists[0].id;
+  save(mode === "replace" ? "Заменено из файла" : "Добавлено из файла", { toast: true });
+  render();
+  closeSettings();
+}
+$("importBtn").onclick = () => $("importFile").click();
+$("importFile").onchange = async () => {
+  const f = $("importFile").files[0];
+  $("importFile").value = "";
+  if (!f) return;
+  const box = $("importConfirm");
+  box.style.display = "";
+  box.textContent = "Читаю файл…";
+  try {
+    if (f.size > 5e6) throw new Error("файл слишком большой");
+    const raw = JSON.parse(await f.text());
+    const lists = sanitizeLists(raw && (Array.isArray(raw) ? raw : raw.lists));
+    const n = lists.reduce((s, l) => s + l.items.length, 0);
+    box.innerHTML = "";
+    const p = document.createElement("p");
+    p.style.margin = "0 0 10px";
+    p.textContent = `В файле «${f.name}»: категорий — ${lists.length}, пунктов — ${n}. Что сделать?`;
+    const row = document.createElement("div"); row.className = "btn-row"; row.style.marginTop = "0";
+    const mkBtn = (text, cls, fn) => { const b = document.createElement("button"); b.type = "button"; b.className = cls; b.textContent = text; b.onclick = fn; row.append(b); };
+    mkBtn("Объединить с текущими", "btn", () => applyImport(lists, "merge"));
+    mkBtn("Заменить всё", "btn ghost", () => applyImport(lists, "replace"));
+    mkBtn("Отмена", "link-btn", () => { box.style.display = "none"; });
+    box.append(p, row);
+  } catch (e) {
+    box.textContent = "Не получилось прочитать файл: " + (e instanceof SyntaxError ? "это не JSON" : e.message) + ".";
+  }
+};
+
+/* --- меньше анимации: вручную или автоматически по настройке системы --- */
+const CALM_KEY = "checklist-calm";
+const motionMq = window.matchMedia ? matchMedia("(prefers-reduced-motion: reduce)") : null;
+function applyCalm() {
+  const saved = read(CALM_KEY);                 // "on" | "off" | null — «как в системе»
+  const sys = !!(motionMq && motionMq.matches);
+  const on = saved === "on" || (saved === null && sys);
+  document.body.classList.toggle("calm", on);
+  $("calmToggle").checked = on;
+  $("calmDesc").textContent = saved === null && sys
+    ? "Включено автоматически: в системе выбрано «уменьшить движение»."
+    : "Без падающих листьев, тумана и вспышек. Интерфейс отвечает мгновенно.";
+}
+$("calmToggle").onchange = () => { store(CALM_KEY, $("calmToggle").checked ? "on" : "off"); applyCalm(); };
+if (motionMq && motionMq.addEventListener) motionMq.addEventListener("change", applyCalm);
+applyCalm();
 
 /* ---------- Кровавая луна ---------- */
 const THEME_KEY = "checklist-theme";
