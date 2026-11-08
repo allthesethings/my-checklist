@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Ночные записи</title>
+<style>
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: radial-gradient(circle at 70% 25%, #2b3142, #0b0e15 60%);
+    color: #f2ecdf; font-family: Georgia, serif;
+    display: grid; place-items: center; text-align: center;
+  }
+  .moon { width: 90px; height: 90px; border-radius: 50%; margin: 0 auto 24px;
+    background: radial-gradient(circle at 40% 38%, #fffaf0, #d6c9a6); box-shadow: 0 0 60px rgba(240,232,210,.35); }
+  h1 { font-weight: 500; font-size: 32px; margin: 0 0 10px; }
+  p { color: #d6cdb9; margin: 0 0 24px; font-size: 17px; }
+  button { font: inherit; font-size: 17px; color: #f2ecdf; cursor: pointer; padding: 10px 22px;
+    border-radius: 4px; border: 1px solid #9b2226; background: rgba(155,34,38,.35); }
+  button:hover { background: #9b2226; }
+</style>
+</head>
+<body>
+  <div>
+    <div class="moon"></div>
+    <h1>Нет связи</h1>
+    <p>При первом запуске нужен интернет. Потом приложение работает и без него.</p>
+    <button onclick="location.href='https://allthesethings.github.io/my-checklist/'">Повторить</button>
+  </div>
+</body>
+</html>

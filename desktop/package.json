@@ -1,0 +1,28 @@
+{
+  "name": "nochnye-zapisi",
+  "version": "1.0.0",
+  "description": "Ночные записи — чеклисты, книги и фильмы",
+  "main": "main.js",
+  "author": "allthesethings",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win portable --x64"
+  },
+  "devDependencies": {
+    "electron": "33.2.1",
+    "electron-builder": "25.1.8"
+  },
+  "build": {
+    "appId": "io.github.allthesethings.nochnyezapisi",
+    "productName": "NochnyeZapisi",
+    "files": ["main.js", "offline.html", "icon.png"],
+    "directories": { "output": "dist" },
+    "win": {
+      "target": [{ "target": "portable", "arch": ["x64"] }],
+      "icon": "icon.png"
+    },
+    "portable": { "artifactName": "NochnyeZapisi-${version}.exe" }
+  }
+}
